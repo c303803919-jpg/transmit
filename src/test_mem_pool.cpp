@@ -1,69 +1,14 @@
 // test_mem_pool.cpp
 // MemPool 基础 UT
-// 编译: g++ -std=c++17 -O2 -pthread test_mem_pool.cpp -o test_mem_pool
+// 编译: g++ -std=c++17 -O2 -pthread test_mem_pool.cpp mem_pool.cpp -o test_mem_pool
+
+#include "mem_pool.h"
 
 #include <cstdint>
 #include <cstring>
 #include <iostream>
-#include <mutex>
-#include <queue>
 #include <set>
 #include <vector>
-
-// ---- 被测类（与 mem_pool.cpp 中 class 一致，直接内嵌省得拆头文件）----
-class MemPool {
-public:
-    MemPool() = default;
-    ~MemPool() = default;
-    MemPool(const MemPool&) = delete;
-    MemPool& operator=(const MemPool&) = delete;
-
-    bool memInit(size_t unitSize, size_t unitCount) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (initialized_ || unitSize == 0 || unitCount == 0) return false;
-        try { buffer_.resize(unitSize * unitCount); }
-        catch (const std::bad_alloc&) { return false; }
-        unitSize_ = unitSize; totalUnits_ = unitCount;
-        for (size_t i = 0; i < unitCount; ++i)
-            freeList_.push(buffer_.data() + i * unitSize);
-        initialized_ = true;
-        return true;
-    }
-    std::vector<void*> memAlloc(size_t count) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        std::vector<void*> r;
-        if (!initialized_ || count == 0 || count > freeList_.size()) return r;
-        r.reserve(count);
-        for (size_t i = 0; i < count; ++i) { r.push_back(freeList_.front()); freeList_.pop(); }
-        return r;
-    }
-    void* memAllocOne() { auto v = memAlloc(1); return v.empty() ? nullptr : v.front(); }
-    void memFree(void* ptr) {
-        if (!ptr) return;
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (!isFromPool(ptr)) return;
-        freeList_.push(ptr);
-    }
-    void memFree(const std::vector<void*>& ptrs) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (auto* p : ptrs) if (p && isFromPool(p)) freeList_.push(p);
-    }
-    size_t unitSize()   const { return unitSize_; }
-    size_t totalUnits() const { return totalUnits_; }
-    size_t availableUnits() { std::lock_guard<std::mutex> lock(mutex_); return freeList_.size(); }
-    void*  basePtr()          { return buffer_.empty() ? nullptr : buffer_.data(); }
-    size_t bufferBytes() const { return buffer_.size(); }
-private:
-    bool isFromPool(void* ptr) const {
-        auto* base = const_cast<uint8_t*>(buffer_.data());
-        return ptr >= base && ptr < base + buffer_.size();
-    }
-    std::vector<uint8_t> buffer_;
-    std::queue<void*>    freeList_;
-    size_t unitSize_ = 0, totalUnits_ = 0;
-    std::mutex mutex_;
-    bool initialized_ = false;
-};
 
 // ====== 极简测试框架 ======
 static int  g_total = 0, g_pass = 0, g_fail = 0;
