@@ -63,9 +63,10 @@ std::vector<MetaInfo> MetadataEngine::batchQuery(const Key& key) {
 
     for (std::uint32_t tokenid : key.tokenids) {
         if ((rng_() & 1ULL) == 0ULL) {
-            out.push_back(VaMeta{client_va(tokenid)});
+            out.push_back(MetaInfo::from_va(client_va(tokenid)));
         } else {
-            out.push_back(IpTokenkeyMeta{kRemoteIp, make_tokenkey(key, tokenid)});
+            out.push_back(MetaInfo::from_ip_tokenkey(
+                kRemoteIp, make_tokenkey(key, tokenid)));
         }
     }
 
@@ -78,7 +79,7 @@ MetadataEngine::batchQueryLocal(const std::vector<std::string>& tokenkeys) {
     out.reserve(tokenkeys.size());
 
     for (const auto& tokenkey : tokenkeys) {
-        out.push_back(VaMeta{server_va(tokenkey)});
+        out.push_back(MetaInfo::from_va(server_va(tokenkey)));
     }
 
     return out;

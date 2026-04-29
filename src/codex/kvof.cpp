@@ -11,11 +11,11 @@ namespace kv_transfer {
 namespace {
 
 bool transfer(Kvof& kvof, const MetaInfo& meta, std::size_t slot_index) {
-    if (const auto* va = std::get_if<VaMeta>(&meta)) {
-        return kvof.va_to_hbm(va->va, slot_index) == 0;
+    if (meta.kind == MetaInfoKind::kVa) {
+        return kvof.va_to_hbm(meta.va.va, slot_index) == 0;
     }
-    if (const auto* lba = std::get_if<LbaMeta>(&meta)) {
-        return kvof.lba_to_hbm(lba->lba, slot_index) == 0;
+    if (meta.kind == MetaInfoKind::kLba) {
+        return kvof.lba_to_hbm(meta.lba.lba, slot_index) == 0;
     }
     return false;
 }
@@ -36,8 +36,8 @@ bool Kvof::token_get_index(const Key& key) {
 
     for (std::size_t i = 0; i < first.size(); ++i) {
         const auto& meta = first[i];
-        if (const auto* remote = std::get_if<IpTokenkeyMeta>(&meta)) {
-            remote_tokenkeys.push_back(remote->tokenkey);
+        if (meta.kind == MetaInfoKind::kIpTokenkey) {
+            remote_tokenkeys.push_back(meta.ip_tokenkey.tokenkey);
             remote_indices.push_back(i);
             continue;
         }

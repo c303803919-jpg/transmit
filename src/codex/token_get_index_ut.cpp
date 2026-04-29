@@ -8,7 +8,6 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <variant>
 #include <vector>
 
 using namespace kv_transfer;
@@ -65,11 +64,11 @@ void test_meta_info_variant_shape() {
     EXPECT(first.size() == key.tokenids.size());
 
     for (const auto& meta : first) {
-        EXPECT(std::holds_alternative<VaMeta>(meta) ||
-               std::holds_alternative<IpTokenkeyMeta>(meta));
-        if (const auto* remote = std::get_if<IpTokenkeyMeta>(&meta)) {
-            EXPECT(!remote->ip.empty());
-            EXPECT(!remote->tokenkey.empty());
+        EXPECT(meta.kind == MetaInfoKind::kVa ||
+               meta.kind == MetaInfoKind::kIpTokenkey);
+        if (meta.kind == MetaInfoKind::kIpTokenkey) {
+            EXPECT(!meta.ip_tokenkey.ip.empty());
+            EXPECT(!meta.ip_tokenkey.tokenkey.empty());
         }
     }
 
@@ -77,8 +76,8 @@ void test_meta_info_variant_shape() {
     auto second = engine.batchQueryLocal(tokenkeys);
     EXPECT(second.size() == tokenkeys.size());
     for (const auto& meta : second) {
-        EXPECT(std::holds_alternative<VaMeta>(meta));
-        EXPECT(std::get<VaMeta>(meta).va != nullptr);
+        EXPECT(meta.kind == MetaInfoKind::kVa);
+        EXPECT(meta.va.va != nullptr);
     }
 }
 

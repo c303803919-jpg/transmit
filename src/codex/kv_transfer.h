@@ -7,7 +7,6 @@
 #include <cstdint>
 #include <random>
 #include <string>
-#include <variant>
 #include <vector>
 
 namespace kv_transfer {
@@ -33,7 +32,41 @@ struct IpTokenkeyMeta {
     std::string tokenkey;
 };
 
-using MetaInfo = std::variant<VaMeta, LbaMeta, IpTokenkeyMeta>;
+enum class MetaInfoKind : std::uint32_t {
+    kVa = 0,
+    kLba,
+    kIpTokenkey,
+};
+
+struct MetaInfo {
+    MetaInfoKind kind {MetaInfoKind::kVa};
+    VaMeta va;
+    LbaMeta lba;
+    IpTokenkeyMeta ip_tokenkey;
+
+    static MetaInfo from_va(void* addr) {
+        MetaInfo meta;
+        meta.kind = MetaInfoKind::kVa;
+        meta.va.va = addr;
+        return meta;
+    }
+
+    static MetaInfo from_lba(std::uint64_t value) {
+        MetaInfo meta;
+        meta.kind = MetaInfoKind::kLba;
+        meta.lba.lba = value;
+        return meta;
+    }
+
+    static MetaInfo from_ip_tokenkey(const std::string& ip,
+                                     const std::string& tokenkey) {
+        MetaInfo meta;
+        meta.kind = MetaInfoKind::kIpTokenkey;
+        meta.ip_tokenkey.ip = ip;
+        meta.ip_tokenkey.tokenkey = tokenkey;
+        return meta;
+    }
+};
 
 class MetadataEngine {
 public:
