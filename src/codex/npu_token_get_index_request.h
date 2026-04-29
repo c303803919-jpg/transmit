@@ -17,12 +17,12 @@ constexpr std::uint32_t kNpuRequestedTokens = 8;
 constexpr std::uint32_t kTokenSizeBytes = 576;
 
 struct RequestBlock {
-    volatile std::uint32_t flag {kFlagIdle};
-    char reqid[kMaxReqIdLen] {};
-    std::uint32_t layerid {0};
-    std::uint32_t num_tokens {0};
-    std::uint32_t tokenids[kMaxTokens] {};
-    std::uint32_t observed_first_bytes[kMaxTokens] {};
+    volatile std::uint32_t flag;
+    char reqid[kMaxReqIdLen];
+    std::uint32_t layerid;
+    std::uint32_t num_tokens;
+    std::uint32_t tokenids[kMaxTokens];
+    std::uint32_t observed_first_bytes[kMaxTokens];
 };
 
 }  // namespace npu_ut
