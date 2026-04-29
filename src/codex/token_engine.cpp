@@ -6,6 +6,7 @@
 #include <cstring>
 #include <functional>
 #include <iostream>
+#include <cstdlib>
 #include <string>
 #include <utility>
 
@@ -53,6 +54,19 @@ std::string make_tokenkey(const Key& key, std::uint32_t tokenid) {
            std::to_string(tokenid);
 }
 
+std::uint32_t tokenid_from_tokenkey(const std::string& tokenkey) {
+    const std::size_t pos = tokenkey.rfind(':');
+    if (pos == std::string::npos || pos + 1 >= tokenkey.size()) {
+        return 0;
+    }
+    return static_cast<std::uint32_t>(
+        std::strtoul(tokenkey.c_str() + pos + 1, nullptr, 10));
+}
+
+void stamp_token(void* token, std::uint32_t tokenid) {
+    std::memset(token, static_cast<int>(tokenid & 0xFF), kTokenSize);
+}
+
 }  // namespace
 
 MetadataEngine::MetadataEngine() = default;
@@ -63,7 +77,9 @@ std::vector<MetaInfo> MetadataEngine::batchQuery(const Key& key) {
 
     for (std::uint32_t tokenid : key.tokenids) {
         if ((rng_() & 1ULL) == 0ULL) {
-            out.push_back(MetaInfo::from_va(client_va(tokenid)));
+            void* va = client_va(tokenid);
+            stamp_token(va, tokenid);
+            out.push_back(MetaInfo::from_va(va));
         } else {
             out.push_back(MetaInfo::from_ip_tokenkey(
                 kRemoteIp, make_tokenkey(key, tokenid)));
@@ -79,7 +95,9 @@ MetadataEngine::batchQueryLocal(const std::vector<std::string>& tokenkeys) {
     out.reserve(tokenkeys.size());
 
     for (const auto& tokenkey : tokenkeys) {
-        out.push_back(MetaInfo::from_va(server_va(tokenkey)));
+        void* va = server_va(tokenkey);
+        stamp_token(va, tokenid_from_tokenkey(tokenkey));
+        out.push_back(MetaInfo::from_va(va));
     }
 
     return out;
