@@ -20,12 +20,14 @@ namespace {
 
 #define CHECK_ACL(x)                                                     \
     do {                                                                 \
+        std::cout << "[CPU] begin " << #x << std::endl;                  \
         aclError ret = (x);                                              \
         if (ret != ACL_SUCCESS) {                                        \
             std::cerr << "[CPU] " << #x << " failed, ret=" << ret        \
                       << std::endl;                                      \
             return 1;                                                    \
         }                                                                \
+        std::cout << "[CPU] done  " << #x << std::endl;                  \
     } while (0)
 
 }  // namespace
@@ -35,22 +37,35 @@ int main() {
     std::cout << "[CPU] npu_token_get_index_ut starts on CPU host" << std::endl;
 
     CHECK_ACL(aclInit(nullptr));
+    std::cout << "[CPU] aclInit finished; creating runtime context" << std::endl;
     int32_t device_id = 0;
     CHECK_ACL(aclrtSetDevice(device_id));
+    std::cout << "[CPU] aclrtSetDevice finished, device_id=" << device_id
+              << std::endl;
 
     aclrtStream stream = nullptr;
     CHECK_ACL(aclrtCreateStream(&stream));
+    std::cout << "[CPU] aclrtCreateStream finished, stream=" << stream
+              << std::endl;
 
     void* hbm = nullptr;
     CHECK_ACL(aclrtMalloc(&hbm,
                           kv_transfer::kTokenSize *
                               kv_transfer::npu_ut::kNpuRequestedTokens,
                           ACL_MEM_MALLOC_HUGE_FIRST));
+    std::cout << "[CPU] HBM allocation finished, hbm=" << hbm
+              << " bytes="
+              << kv_transfer::kTokenSize *
+                     kv_transfer::npu_ut::kNpuRequestedTokens
+              << std::endl;
 
     void* request_dev = nullptr;
     CHECK_ACL(aclrtMalloc(&request_dev,
                           sizeof(kv_transfer::npu_ut::RequestBlock),
                           ACL_MEM_MALLOC_HUGE_FIRST));
+    std::cout << "[CPU] request block allocation finished, request_dev="
+              << request_dev << " bytes="
+              << sizeof(kv_transfer::npu_ut::RequestBlock) << std::endl;
 
     auto* request = reinterpret_cast<kv_transfer::npu_ut::RequestBlock*>(
         request_dev);
@@ -64,6 +79,8 @@ int main() {
         block_dim, stream,
         reinterpret_cast<uint8_t*>(request_dev),
         reinterpret_cast<uint8_t*>(hbm));
+    std::cout << "[CPU] NPU kernel launch returned on host; polling request flag"
+              << std::endl;
 
     bool got_request = false;
     for (int retry = 0; retry < 10000; ++retry) {
@@ -71,6 +88,10 @@ int main() {
         if (request->flag == kv_transfer::npu_ut::kFlagRequest) {
             got_request = true;
             break;
+        }
+        if ((retry % 1000) == 0) {
+            std::cout << "[CPU] waiting for NPU request, retry=" << retry
+                      << " flag=" << request->flag << std::endl;
         }
         std::this_thread::sleep_for(std::chrono::microseconds(100));
     }
