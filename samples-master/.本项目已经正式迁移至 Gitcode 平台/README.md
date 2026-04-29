@@ -1,0 +1,1 @@
+# 通知: 本项目已经正式迁移至 Gitcode 平台，其中 [operator/ascendc](https://gitee.com/ascend/samples/tree/master/operator/ascendc) 迁移到 [examples](https://gitcode.com/cann/asc-devkit/tree/master/examples) 目录中。
