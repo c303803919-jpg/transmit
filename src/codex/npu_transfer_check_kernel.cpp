@@ -15,10 +15,21 @@ extern "C" __global__ __aicore__ void kvof_transfer_check_kernel(GM_ADDR request
 
     AscendC::printf("[NPU] issuing vector-key request on NPU\n");
 
-    const char name[] = "npu-vector-key";
-    for (unsigned int i = 0; i < sizeof(name); ++i) {
-        req->reqid[i] = name[i];
-    }
+    req->reqid[0] = 'n';
+    req->reqid[1] = 'p';
+    req->reqid[2] = 'u';
+    req->reqid[3] = '-';
+    req->reqid[4] = 'v';
+    req->reqid[5] = 'e';
+    req->reqid[6] = 'c';
+    req->reqid[7] = 't';
+    req->reqid[8] = 'o';
+    req->reqid[9] = 'r';
+    req->reqid[10] = '-';
+    req->reqid[11] = 'k';
+    req->reqid[12] = 'e';
+    req->reqid[13] = 'y';
+    req->reqid[14] = '\0';
     req->layerid = 7;
     req->num_tokens = kv_transfer::npu_ut::kNpuRequestedTokens;
     for (unsigned int i = 0; i < kv_transfer::npu_ut::kNpuRequestedTokens; ++i) {
