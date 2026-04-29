@@ -54,3 +54,10 @@ target_compile_options(npu_token_get_index_ut PRIVATE -O2 -Wall -Wextra)
 target_link_libraries(npu_token_get_index_ut PRIVATE
     kvof_npu_kernels
 )
+
+add_custom_target(run_npu_token_get_index_ut
+    COMMAND npu_token_get_index_ut
+    DEPENDS npu_token_get_index_ut
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    USES_TERMINAL
+)

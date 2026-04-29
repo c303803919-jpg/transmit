@@ -36,10 +36,11 @@ mkdir -p build_npu
 cmake -B build_npu \
     -DSOC_VERSION=${SOC_VERSION} \
     -DASCEND_CANN_PACKAGE_PATH=${_ASCEND_INSTALL_PATH}
-cmake --build build_npu -j
+cmake --build build_npu -j --target npu_token_get_index_ut
 
 ./build_npu/npu_token_get_index_ut | tee npu_ut_output.txt
 
 grep -q "\[CPU\] calling Kvof::token_get_index on CPU host" npu_ut_output.txt
-grep -q "\[NPU\] kvof_transfer_check_kernel is running on NPU" npu_ut_output.txt
+grep -q "\[NPU\] issuing vector-key request on NPU" npu_ut_output.txt
+grep -q "\[CPU\] NPU observed first byte per token" npu_ut_output.txt
 grep -q "\[CPU\] npu_token_get_index_ut passed" npu_ut_output.txt
