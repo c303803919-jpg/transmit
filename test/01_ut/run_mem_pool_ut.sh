@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Configure / build / run the kvof_cpu UT (token_get_index_ut)
+# Configure / build / run the mem_pool UT (test_mem_pool)
 # from the top-level KVoF_PR CMake project.
 
 set -euo pipefail
@@ -18,12 +18,12 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         -h|--help)
-            echo "Usage: bash run_kvof_cpu_ut.sh [-b <build_dir>] [-c <cxx_compiler>]"
+            echo "Usage: bash run_mem_pool_ut.sh [-b <build_dir>] [-c <cxx_compiler>]"
             exit 0
             ;;
         *)
             echo "Unknown argument: $1"
-            echo "Usage: bash run_kvof_cpu_ut.sh [-b <build_dir>] [-c <cxx_compiler>]"
+            echo "Usage: bash run_mem_pool_ut.sh [-b <build_dir>] [-c <cxx_compiler>]"
             exit 1
             ;;
     esac
@@ -42,10 +42,10 @@ fi
 echo "[INFO] Configuring KVoF_PR in $BUILD_PATH"
 cmake "${CMAKE_ARGS[@]}"
 
-echo "[INFO] Building token_get_index_ut"
-cmake --build "$BUILD_PATH" -j --target token_get_index_ut
+echo "[INFO] Building test_mem_pool"
+cmake --build "$BUILD_PATH" -j --target test_mem_pool
 
-echo "[INFO] Running token_get_index_ut"
-"$BUILD_PATH/token_get_index_ut"
+echo "[INFO] Running test_mem_pool"
+"$BUILD_PATH/test_mem_pool"
 
-echo "[INFO] kvof_cpu token_get_index_ut completed successfully"
+echo "[INFO] mem_pool test_mem_pool completed successfully"
