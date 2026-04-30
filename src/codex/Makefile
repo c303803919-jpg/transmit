@@ -1,15 +1,17 @@
 CXX      ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -Wpedantic
 
-OBJS = token_engine.o kvof.o token_get_index_ut.o
+CPPFLAGS ?= -Ikvof_cpu
+
+OBJS = kvof_cpu/mock.o kvof_cpu/token_get_index.o kvof_cpu/token_get_index_ut.o
 
 all: token_get_index_ut
 
 token_get_index_ut: $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $(OBJS)
 
-%.o: %.cpp kv_transfer.h
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+kvof_cpu/%.o: kvof_cpu/%.cpp kvof_cpu/kv_transfer.h
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 test: token_get_index_ut
 	./token_get_index_ut

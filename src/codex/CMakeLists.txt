@@ -46,11 +46,15 @@ ascendc_library(kvof_npu_kernels STATIC
 
 add_executable(npu_token_get_index_ut
     npu_token_get_index_ut.cpp
-    token_engine.cpp
-    kvof.cpp
+    kvof_cpu/mock.cpp
+    kvof_cpu/token_get_index.cpp
 )
 target_compile_definitions(npu_token_get_index_ut PRIVATE KVOF_USE_ACL)
 target_compile_options(npu_token_get_index_ut PRIVATE -O2 -Wall -Wextra)
+target_include_directories(npu_token_get_index_ut PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/kvof_cpu
+)
 target_link_libraries(npu_token_get_index_ut PRIVATE
     kvof_npu_kernels
 )
@@ -62,4 +66,5 @@ add_custom_target(run_npu_token_get_index_ut
     USES_TERMINAL
 )
 
+add_subdirectory(kvof_cpu)
 add_subdirectory(kvof_npu)
