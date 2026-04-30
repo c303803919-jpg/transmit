@@ -97,4 +97,20 @@ private:
 
 bool token_get_index(const Key& key);
 
+// C-style bridge used by NPU->CPU request path.
+// Preconditions:
+//   * req_lst points to batch_size C strings.
+//   * layerid_lst points to batch_size int32 values.
+//   * index_lst points to (batch_size * num_segment) int32 values
+//     in row-major layout.
+// Returns a non-zero kvof_ID on success, or 0 on input/processing error.
+std::uint64_t kvof_get(const char* const* req_lst,
+                       const std::int32_t* layerid_lst,
+                       const std::int32_t* index_lst,
+                       int batch_size,
+                       int segment_size,
+                       int num_segment,
+                       int src_media_type,
+                       int dst_media_type);
+
 }  // namespace kv_transfer

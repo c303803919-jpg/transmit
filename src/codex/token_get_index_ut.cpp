@@ -120,6 +120,37 @@ void test_va_transfer_copies_data_to_hbm() {
     }
 }
 
+void test_kvof_get_batch_calls_token_get_index() {
+    const char* req_lst[] = {"req-b0", "req-b1"};
+    const std::int32_t layerid_lst[] = {7, 8};
+    const std::int32_t index_lst[] = {
+        11, 12, 13,
+        21, 22, 23,
+    };
+
+    const std::uint64_t kvof_id = kvof_get(req_lst,
+                                           layerid_lst,
+                                           index_lst,
+                                           2,
+                                           1,
+                                           3,
+                                           0,
+                                           1);
+    EXPECT(kvof_id != 0);
+}
+
+void test_kvof_get_rejects_invalid_inputs() {
+    const char* req_lst[] = {"req-b0"};
+    const std::int32_t layerid_lst[] = {7};
+    const std::int32_t index_lst[] = {11, 12};
+
+    EXPECT(kvof_get(nullptr, layerid_lst, index_lst, 1, 1, 2, 0, 1) == 0);
+    EXPECT(kvof_get(req_lst, nullptr, index_lst, 1, 1, 2, 0, 1) == 0);
+    EXPECT(kvof_get(req_lst, layerid_lst, nullptr, 1, 1, 2, 0, 1) == 0);
+    EXPECT(kvof_get(req_lst, layerid_lst, index_lst, -1, 1, 2, 0, 1) == 0);
+    EXPECT(kvof_get(req_lst, layerid_lst, index_lst, 1, 1, -1, 0, 1) == 0);
+}
+
 }  // namespace
 
 int main() {
@@ -128,6 +159,8 @@ int main() {
     RUN(test_meta_info_variant_shape);
     RUN(test_free_function_wraps_kvof);
     RUN(test_va_transfer_copies_data_to_hbm);
+    RUN(test_kvof_get_batch_calls_token_get_index);
+    RUN(test_kvof_get_rejects_invalid_inputs);
     std::cout << "\nAll token_get_index tests passed.\n";
     return 0;
 }

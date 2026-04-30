@@ -61,3 +61,5 @@ add_custom_target(run_npu_token_get_index_ut
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     USES_TERMINAL
 )
+
+add_subdirectory(kvof_npu)
