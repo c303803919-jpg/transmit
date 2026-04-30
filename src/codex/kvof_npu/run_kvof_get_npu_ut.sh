@@ -57,7 +57,20 @@ cmake -B "${BUILD_DIR}" \
 
 cmake --build "${BUILD_DIR}" -j --target kvof_get_npu_ut
 
-"./${BUILD_DIR}/kvof_get_npu_ut" | tee "${BUILD_DIR}/kvof_get_npu_ut_output.txt"
+UT_BIN=""
+if [ -x "./${BUILD_DIR}/kvof_get_npu_ut" ]; then
+    UT_BIN="./${BUILD_DIR}/kvof_get_npu_ut"
+elif [ -x "./${BUILD_DIR}/kvof_npu/kvof_get_npu_ut" ]; then
+    # add_subdirectory(kvof_npu) puts target outputs under this subdir by default.
+    UT_BIN="./${BUILD_DIR}/kvof_npu/kvof_get_npu_ut"
+else
+    echo "[ERROR] kvof_get_npu_ut binary not found in expected locations"
+    echo "[ERROR] checked: ./${BUILD_DIR}/kvof_get_npu_ut"
+    echo "[ERROR] checked: ./${BUILD_DIR}/kvof_npu/kvof_get_npu_ut"
+    exit 1
+fi
+
+"${UT_BIN}" | tee "${BUILD_DIR}/kvof_get_npu_ut_output.txt"
 
 grep -q "kvof_get_npu_ut passed" "${BUILD_DIR}/kvof_get_npu_ut_output.txt"
 

@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/token_get_index_ut.dir/token_get_index_ut.cpp.o CMakeFiles/token_get_index_ut.dir/token_get_index.cpp.o CMakeFiles/token_get_index_ut.dir/mock.cpp.o -o token_get_index_ut

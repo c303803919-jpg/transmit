@@ -1,0 +1,4 @@
+/Users/warren/Documents/GitHub/transmit/src/codex/kvof_cpu/build_kvof_cpu/CMakeFiles/token_get_index_ut.dir
+/Users/warren/Documents/GitHub/transmit/src/codex/kvof_cpu/build_kvof_cpu/CMakeFiles/run_token_get_index_ut.dir
+/Users/warren/Documents/GitHub/transmit/src/codex/kvof_cpu/build_kvof_cpu/CMakeFiles/edit_cache.dir
+/Users/warren/Documents/GitHub/transmit/src/codex/kvof_cpu/build_kvof_cpu/CMakeFiles/rebuild_cache.dir
