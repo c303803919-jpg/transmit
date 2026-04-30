@@ -20,9 +20,29 @@ target_link_libraries(kvof_get_npu_ut PRIVATE
     kvof_get_npu_kernels
 )
 
+add_executable(kvof_get_cpu_handler_ut
+    kvof_get_cpu_handler_ut.cpp
+    kvof_get_cpu_handler.cpp
+    ../token_engine.cpp
+    ../kvof.cpp
+)
+
+target_compile_options(kvof_get_cpu_handler_ut PRIVATE -O2 -Wall -Wextra)
+target_include_directories(kvof_get_cpu_handler_ut PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+)
+
 add_custom_target(run_kvof_get_npu_ut
     COMMAND kvof_get_npu_ut
     DEPENDS kvof_get_npu_ut
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    USES_TERMINAL
+)
+
+add_custom_target(run_kvof_get_cpu_handler_ut
+    COMMAND kvof_get_cpu_handler_ut
+    DEPENDS kvof_get_cpu_handler_ut
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     USES_TERMINAL
 )

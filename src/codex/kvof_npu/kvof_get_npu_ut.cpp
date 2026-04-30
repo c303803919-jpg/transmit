@@ -75,7 +75,8 @@ int main() {
                               reinterpret_cast<uint8_t*>(request_dev));
 
     bool got_request = false;
-    for (int retry = 0; retry < 10000; ++retry) {
+    constexpr int kMaxPollRetries = 10000;
+    for (int retry = 0; retry < kMaxPollRetries; ++retry) {
         if (aclrtMemcpy(&request_host,
                         sizeof(request_host),
                         request_dev,
@@ -95,13 +96,20 @@ int main() {
     }
 
     if (!got_request) {
-        std::cerr << "Timed out waiting for NPU request" << std::endl;
+        // Print the last observed flag so it's clear whether the NPU kernel
+        // never started (flag==kFlagIdle) or is stuck mid-execution.
+        std::cerr << "Timed out waiting for kFlagRequest after "
+                  << kMaxPollRetries << " retries; "
+                  << "last flag=" << request_host.flag << std::endl;
         cleanup();
         return 1;
     }
 
     if (!kv_transfer::kvof_npu::process_kvof_get_request(&request_host)) {
-        std::cerr << "CPU failed to process kvof_get request" << std::endl;
+        // handler sets flag=kFlagError; print it to distinguish validation
+        // failures (bad shape, bad req string) from kvof_get() returning 0.
+        std::cerr << "CPU failed to process kvof_get request, "
+                  << "flag after call=" << request_host.flag << std::endl;
         cleanup();
         return 1;
     }
