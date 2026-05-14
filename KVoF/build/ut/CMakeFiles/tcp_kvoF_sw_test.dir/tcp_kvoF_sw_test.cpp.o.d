@@ -846,7 +846,6 @@ ut/CMakeFiles/tcp_kvoF_sw_test.dir/tcp_kvoF_sw_test.cpp.o: \
   /usr/local/include/gtest/internal/gtest-param-util.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/cassert \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/assert.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_static_assert.h \
   /usr/local/include/gtest/gtest-test-part.h \
   /usr/local/include/gtest/gtest-typed-test.h \
@@ -857,4 +856,4 @@ ut/CMakeFiles/tcp_kvoF_sw_test.dir/tcp_kvoF_sw_test.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/thread.h \
   /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/ut/../src/kvoF_transport.h \
   /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/ut/../src/minimal_transport.h \
-  /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/../include/common/base/status.h
+  /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/ut/../src/common/base/status.h

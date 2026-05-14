@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = -DGFLAGS_IS_A_DLL=0 -DGLOG_USE_GFLAGS -DGLOG_USE_GLOG_EXPORT
 
-CXX_INCLUDES = -I/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src -I/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/../include
+CXX_INCLUDES = -I/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src
 
-CXX_FLAGS = -std=gnu++17
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++17
 

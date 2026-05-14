@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o"
-  "CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o.d"
+  "CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o"
+  "CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o.d"
   "CMakeFiles/kvoF_transport.dir/kvoF_transport.cpp.o"
   "CMakeFiles/kvoF_transport.dir/kvoF_transport.cpp.o.d"
   "CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.o"

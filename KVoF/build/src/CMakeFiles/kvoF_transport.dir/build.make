@@ -100,32 +100,32 @@ src/CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.s"
 	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src/tcp_minimal_transport.cpp -o CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.s
 
-src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o: src/CMakeFiles/kvoF_transport.dir/flags.make
-src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o: /Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp
-src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o: src/CMakeFiles/kvoF_transport.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o"
-	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o -MF CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o.d -o CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o -c /Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp
+src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o: src/CMakeFiles/kvoF_transport.dir/flags.make
+src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o: /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src/common/base/status.cpp
+src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o: src/CMakeFiles/kvoF_transport.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o"
+	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o -MF CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o.d -o CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o -c /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src/common/base/status.cpp
 
-src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.i"
-	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp > CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.i
+src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/kvoF_transport.dir/common/base/status.cpp.i"
+	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src/common/base/status.cpp > CMakeFiles/kvoF_transport.dir/common/base/status.cpp.i
 
-src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.s"
-	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp -o CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.s
+src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/kvoF_transport.dir/common/base/status.cpp.s"
+	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/src && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src/common/base/status.cpp -o CMakeFiles/kvoF_transport.dir/common/base/status.cpp.s
 
 # Object files for target kvoF_transport
 kvoF_transport_OBJECTS = \
 "CMakeFiles/kvoF_transport.dir/kvoF_transport.cpp.o" \
 "CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.o" \
-"CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o"
+"CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o"
 
 # External object files for target kvoF_transport
 kvoF_transport_EXTERNAL_OBJECTS =
 
 src/libkvoF_transport.a: src/CMakeFiles/kvoF_transport.dir/kvoF_transport.cpp.o
 src/libkvoF_transport.a: src/CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.o
-src/libkvoF_transport.a: src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o
+src/libkvoF_transport.a: src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o
 src/libkvoF_transport.a: src/CMakeFiles/kvoF_transport.dir/build.make
 src/libkvoF_transport.a: src/CMakeFiles/kvoF_transport.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX static library libkvoF_transport.a"

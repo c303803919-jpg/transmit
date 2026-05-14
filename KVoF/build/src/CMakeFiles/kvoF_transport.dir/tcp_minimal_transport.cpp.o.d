@@ -800,7 +800,7 @@ src/CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.o: \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/thread \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/this_thread.h \
   /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src/minimal_transport.h \
-  /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/../include/common/base/status.h \
+  /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/src/common/base/status.h \
   /usr/local/include/glog/logging.h /usr/local/include/glog/export.h \
   /usr/local/include/glog/flags.h /usr/local/include/gflags/gflags.h \
   /usr/local/include/gflags/gflags_declare.h \
@@ -849,7 +849,6 @@ src/CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.o: \
   /usr/local/include/asio/detail/assert.hpp \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1/cassert \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/assert.h \
-  /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_assert.h \
   /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_static_assert.h \
   /usr/local/include/asio/detail/atomic_count.hpp \
   /usr/local/include/asio/detail/cstddef.hpp \

@@ -140,29 +140,29 @@ kvoF_transport/fast:
 	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/kvoF_transport.dir/build.make src/CMakeFiles/kvoF_transport.dir/build
 .PHONY : kvoF_transport/fast
 
-Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.o: Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o
-.PHONY : Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.o
+common/base/status.o: common/base/status.cpp.o
+.PHONY : common/base/status.o
 
 # target to build an object file
-Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o:
-	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/kvoF_transport.dir/build.make src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o
-.PHONY : Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o
+common/base/status.cpp.o:
+	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/kvoF_transport.dir/build.make src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o
+.PHONY : common/base/status.cpp.o
 
-Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.i: Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.i
-.PHONY : Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.i
+common/base/status.i: common/base/status.cpp.i
+.PHONY : common/base/status.i
 
 # target to preprocess a source file
-Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.i:
-	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/kvoF_transport.dir/build.make src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.i
-.PHONY : Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.i
+common/base/status.cpp.i:
+	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/kvoF_transport.dir/build.make src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.i
+.PHONY : common/base/status.cpp.i
 
-Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.s: Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.s
-.PHONY : Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.s
+common/base/status.s: common/base/status.cpp.s
+.PHONY : common/base/status.s
 
 # target to generate assembly for a file
-Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.s:
-	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/kvoF_transport.dir/build.make src/CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.s
-.PHONY : Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.s
+common/base/status.cpp.s:
+	cd /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/kvoF_transport.dir/build.make src/CMakeFiles/kvoF_transport.dir/common/base/status.cpp.s
+.PHONY : common/base/status.cpp.s
 
 kvoF_transport.o: kvoF_transport.cpp.o
 .PHONY : kvoF_transport.o
@@ -222,9 +222,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... test"
 	@echo "... kvoF_transport"
-	@echo "... Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.o"
-	@echo "... Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.i"
-	@echo "... Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.s"
+	@echo "... common/base/status.o"
+	@echo "... common/base/status.i"
+	@echo "... common/base/status.s"
 	@echo "... kvoF_transport.o"
 	@echo "... kvoF_transport.i"
 	@echo "... kvoF_transport.s"

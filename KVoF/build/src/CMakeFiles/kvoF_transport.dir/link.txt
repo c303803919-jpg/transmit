@@ -1,2 +1,2 @@
-/usr/bin/ar qc libkvoF_transport.a CMakeFiles/kvoF_transport.dir/kvoF_transport.cpp.o CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.o "CMakeFiles/kvoF_transport.dir/Users/warren/home/mooncake/mooncake-transfer-engine/src/common/base/status.cpp.o"
+/usr/bin/ar qc libkvoF_transport.a CMakeFiles/kvoF_transport.dir/kvoF_transport.cpp.o CMakeFiles/kvoF_transport.dir/tcp_minimal_transport.cpp.o CMakeFiles/kvoF_transport.dir/common/base/status.cpp.o
 /usr/bin/ranlib libkvoF_transport.a
