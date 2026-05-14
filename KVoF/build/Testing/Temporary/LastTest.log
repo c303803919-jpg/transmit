@@ -1,0 +1,42 @@
+Start testing: May 14 11:01 CST
+----------------------------------------------------------
+1/1 Testing: tcp_kvoF_sw_test
+1/1 Test: tcp_kvoF_sw_test
+Command: "/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/ut/tcp_kvoF_sw_test"
+Directory: /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/ut
+"tcp_kvoF_sw_test" start time: May 14 11:01 CST
+Output:
+----------------------------------------------------------
+Running main() from /private/tmp/googletest-20250808-4990-9ldiyw/googletest-1.17.0/googletest/src/gtest_main.cc
+[==========] Running 6 tests from 2 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from MemoryPool
+[ RUN      ] MemoryPool.AcquireRelease
+[       OK ] MemoryPool.AcquireRelease (0 ms)
+[ RUN      ] MemoryPool.SlotDataIsIsolated
+[       OK ] MemoryPool.SlotDataIsIsolated (0 ms)
+[----------] 2 tests from MemoryPool (0 ms total)
+
+[----------] 4 tests from TcpKVoF
+[ RUN      ] TcpKVoF.GetTransfer
+[       OK ] TcpKVoF.GetTransfer (160 ms)
+[ RUN      ] TcpKVoF.PutTransfer
+[       OK ] TcpKVoF.PutTransfer (164 ms)
+[ RUN      ] TcpKVoF.MetaSearchMiss
+[       OK ] TcpKVoF.MetaSearchMiss (163 ms)
+[ RUN      ] TcpKVoF.ConcurrentBatches
+[       OK ] TcpKVoF.ConcurrentBatches (163 ms)
+[----------] 4 tests from TcpKVoF (653 ms total)
+
+[----------] Global test environment tear-down
+[==========] 6 tests from 2 test suites ran. (653 ms total)
+[  PASSED  ] 6 tests.
+<end of output>
+Test time =   1.05 sec
+----------------------------------------------------------
+Test Passed.
+"tcp_kvoF_sw_test" end time: May 14 11:01 CST
+"tcp_kvoF_sw_test" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: May 14 11:01 CST

@@ -1,7 +1,7 @@
 #include "tcp_minimal_transport.h"
 
+#include <cerrno>
 #include <glog/logging.h>
-#include <sys/socket.h>
 #include <unistd.h>
 
 #include <asio/connect.hpp>
@@ -18,9 +18,9 @@ using tcp = asio::ip::tcp;
 // ── PersistentConn ────────────────────────────────────────────────────────────
 
 struct PersistentConn {
-    std::shared_ptr<asio::io_context>   ctx;
-    std::unique_ptr<tcp::socket>        sock;
-    std::mutex                          mu;   // serialize requests on this connection
+    std::shared_ptr<asio::io_context> ctx;
+    std::unique_ptr<tcp::socket>      sock;
+    std::mutex                        mu;  // serialize requests on this connection
 
     PersistentConn()
         : ctx(std::make_shared<asio::io_context>()),
@@ -34,13 +34,12 @@ TcpMinimalTransport::~TcpMinimalTransport() {
 }
 
 int TcpMinimalTransport::install(const TransportConfig& /*config*/) {
-    return 0;  // TCP requires no hardware setup
+    return 0;
 }
 
 void TcpMinimalTransport::uninstall() {
     running_.store(false);
     if (ctrl_thread_.joinable()) ctrl_thread_.join();
-    if (data_thread_.joinable()) data_thread_.join();
 
     std::lock_guard<std::mutex> lock(conns_mu_);
     conns_.clear();
@@ -49,22 +48,16 @@ void TcpMinimalTransport::uninstall() {
 int TcpMinimalTransport::init(const std::string& bind_ip, uint16_t ctrl_port) {
     bind_ip_   = bind_ip;
     ctrl_port_ = ctrl_port;
-    data_port_ = ctrl_port + 1;
     running_.store(true);
 
-    std::promise<void> ctrl_ready, data_ready;
+    std::promise<void> ctrl_ready;
     auto ctrl_fut = ctrl_ready.get_future();
-    auto data_fut = data_ready.get_future();
 
     ctrl_thread_ = std::thread([this, p = std::move(ctrl_ready)]() mutable {
         runCtrlServer(std::move(p));
     });
-    data_thread_ = std::thread([this, p = std::move(data_ready)]() mutable {
-        runDataServer(std::move(p));
-    });
 
     ctrl_fut.wait();
-    data_fut.wait();
     return 0;
 }
 
@@ -97,12 +90,10 @@ Status TcpMinimalTransport::connectServer(const std::string& server_ip,
     asio::error_code ec;
 
     auto eps = resolver.resolve(server_ip, std::to_string(server_ctrl_port), ec);
-    if (ec)
-        return Status::Socket("connectServer resolve: " + ec.message());
+    if (ec) return Status::Socket("connectServer resolve: " + ec.message());
 
     asio::connect(*conn->sock, eps, ec);
-    if (ec)
-        return Status::Socket("connectServer connect: " + ec.message());
+    if (ec) return Status::Socket("connectServer connect: " + ec.message());
 
     std::string key = server_ip + ":" + std::to_string(server_ctrl_port);
     std::lock_guard<std::mutex> lock(conns_mu_);
@@ -117,12 +108,100 @@ void TcpMinimalTransport::disconnectServer(const std::string& server_ip,
     conns_.erase(key);
 }
 
+// ── Inline data helper ────────────────────────────────────────────────────────
+//
+// Called by both the server (runCtrlServer) and the client (submitAsync) to
+// perform per-entry data exchange on the shared ctrl TCP socket.
+//
+// Server side (is_server=true):
+//   - Sends DataSessionHeader per entry.
+//   - GET: writes slot bytes to socket.
+//   - PUT: reads socket bytes into slot.
+//
+// Client side (is_server=false):
+//   - Reads DataSessionHeader per entry.
+//   - GET: reads socket bytes into client_addr buffer.
+//   - PUT: writes client_addr buffer bytes to socket.
+
+template <typename Socket>
+static bool exchangeData(Socket& sock,
+                         const std::vector<RequestEntry>& entries,
+                         bool is_server,
+                         std::function<MemRegion(uint64_t)> meta_search,
+                         int& status_code_out,
+                         uint64_t& transferred_out) {
+    asio::error_code ec;
+    bool io_broken = false;
+
+    for (const auto& e : entries) {
+        // ── Server: build and send DataSessionHeader ──────────────────────────
+        if (is_server) {
+            MemRegion mr{};
+            if (!io_broken && status_code_out == 0 && meta_search)
+                mr = meta_search(e.key);
+            if (!mr.addr && status_code_out == 0)
+                status_code_out = ENOENT;
+
+            DataSessionHeader dsh{};
+            dsh.opcode = (e.opcode == OpCode::GET) ? 0 : 1;
+            if (io_broken || status_code_out != 0 || !mr.addr) {
+                dsh.size         = 0;
+                dsh.entry_status = static_cast<uint64_t>(
+                    status_code_out ? status_code_out : ENOENT);
+            } else {
+                dsh.size         = e.size;
+                dsh.entry_status = 0;
+            }
+
+            asio::write(sock, asio::buffer(&dsh, sizeof(dsh)), ec);
+            if (ec) { io_broken = true; continue; }
+
+            if (dsh.entry_status != 0) continue;  // error entry — no data
+
+            char* local_buf = static_cast<char*>(mr.addr);
+            if (e.opcode == OpCode::GET) {
+                asio::write(sock, asio::buffer(local_buf, e.size), ec);
+            } else {
+                asio::read(sock, asio::buffer(local_buf, e.size), ec);
+            }
+            if (ec) {
+                io_broken = true;
+                if (status_code_out == 0) status_code_out = EIO;
+            } else {
+                transferred_out += e.size;
+            }
+
+        // ── Client: read DataSessionHeader and do data exchange ───────────────
+        } else {
+            if (io_broken) break;
+
+            DataSessionHeader dsh{};
+            asio::read(sock, asio::buffer(&dsh, sizeof(dsh)), ec);
+            if (ec) { io_broken = true; break; }
+
+            if (dsh.entry_status != 0) continue;  // server-reported error, no data
+
+            void* client_buf = reinterpret_cast<void*>(e.client_addr);
+            if (dsh.opcode == 0) {  // GET: receive from server
+                asio::read(sock, asio::buffer(client_buf, e.size), ec);
+            } else {                // PUT: send to server
+                asio::write(sock, asio::buffer(client_buf, e.size), ec);
+            }
+            if (ec) io_broken = true;
+        }
+    }
+
+    return !io_broken;
+}
+
 // ── Server ctrl acceptor ──────────────────────────────────────────────────────
 //
-// Accepts one connection at a time and loops over all ctrl requests from that
-// connection until the client closes it.  This preserves the original
-// synchronous model while supporting persistent client connections (established
-// via connectServer) that issue multiple sequential request batches.
+// All data exchange (GET bytes / PUT bytes) happens inline on the ctrl socket.
+// No reverse connection to the client is needed; the client initiates all TCP
+// connections so firewalls and NAT are never an issue.
+//
+// Multiple request batches from the same client connection are handled in the
+// inner while(true) loop, which exits when the client disconnects (EOF).
 
 void TcpMinimalTransport::runCtrlServer(std::promise<void> ready) {
     asio::io_context ctx;
@@ -138,7 +217,7 @@ void TcpMinimalTransport::runCtrlServer(std::promise<void> ready) {
     acceptor.listen(asio::socket_base::max_listen_connections, ec);
     if (ec) { ready.set_value(); return; }
 
-    // Non-blocking accept so running_ can be checked between calls.
+    // Non-blocking accept so running_ can be polled between accepts.
     // SO_RCVTIMEO is unreliable for asio's kqueue-based accept on macOS.
     acceptor.non_blocking(true, ec);
 
@@ -153,143 +232,39 @@ void TcpMinimalTransport::runCtrlServer(std::promise<void> ready) {
         }
         if (ec) continue;
 
-        // Accepted socket inherits non-blocking; restore blocking for sync I/O.
+        // Restore blocking I/O on the accepted socket.
         sock.non_blocking(false, ec);
 
         asio::error_code io_ec;
-        std::string client_ip =
-            sock.remote_endpoint(io_ec).address().to_string();
-        if (io_ec) continue;
 
-        // Handle ONE ctrl request per connection (original behavior).
-        ControlRequestHeader hdr{};
-        asio::read(sock, asio::buffer(&hdr, sizeof(hdr)), io_ec);
-        if (io_ec || hdr.magic != kControlMagic || hdr.count == 0) continue;
-
-        std::vector<RequestEntry> entries(hdr.count);
-        asio::read(sock,
-                   asio::buffer(entries.data(),
-                                hdr.count * sizeof(RequestEntry)),
-                   io_ec);
-        if (io_ec) continue;
-
-        std::vector<ConcreteTransfer> xfers;
-        int status_code = 0;
-        for (const auto& e : entries) {
-            MemRegion mr = meta_search_ ? meta_search_(e.key) : MemRegion{};
-            if (!mr.addr) { status_code = ENOENT; break; }
-            xfers.push_back({e.opcode, mr.addr, e.client_addr,
-                             static_cast<size_t>(e.size)});
-        }
-
-        uint64_t transferred = 0;
-        if (status_code == 0 && !xfers.empty())
-            driveTransfers(client_ip, hdr.data_port, xfers, transferred);
-
-        ControlResponse resp{kControlMagic, status_code, transferred};
-        asio::write(sock, asio::buffer(&resp, sizeof(resp)), io_ec);
-    }
-}
-
-// ── Client data acceptor ──────────────────────────────────────────────────────
-
-void TcpMinimalTransport::runDataServer(std::promise<void> ready) {
-    asio::io_context ctx;
-    tcp::acceptor    acceptor(ctx);
-    tcp::endpoint    ep(tcp::v4(), data_port_);
-    asio::error_code ec;
-
-    acceptor.open(ep.protocol(), ec);
-    if (ec) { ready.set_value(); return; }
-    acceptor.set_option(tcp::acceptor::reuse_address(true));
-    acceptor.bind(ep, ec);
-    if (ec) { ready.set_value(); return; }
-    acceptor.listen(asio::socket_base::max_listen_connections, ec);
-    if (ec) { ready.set_value(); return; }
-
-    acceptor.non_blocking(true, ec);
-
-    ready.set_value();
-
-    while (running_.load()) {
-        tcp::socket sock(ctx);
-        acceptor.accept(sock, ec);
-        if (ec == asio::error::would_block) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-            continue;
-        }
-        if (ec) continue;
-
-        sock.non_blocking(false, ec);
-
-        asio::error_code io_ec;
+        // Inner loop: handle multiple batches on the same TCP connection
+        // (used by persistent clients). Single-shot clients break on EOF.
         while (true) {
-            DataSessionHeader hdr{};
+            ControlRequestHeader hdr{};
             asio::read(sock, asio::buffer(&hdr, sizeof(hdr)), io_ec);
             if (io_ec) break;
+            if (hdr.magic != kControlMagic || hdr.count == 0) break;
 
-            char*  buf  = reinterpret_cast<char*>(hdr.addr);
-            size_t size = static_cast<size_t>(hdr.size);
+            std::vector<RequestEntry> entries(hdr.count);
+            asio::read(sock,
+                       asio::buffer(entries.data(),
+                                    hdr.count * sizeof(RequestEntry)),
+                       io_ec);
+            if (io_ec) break;
 
-            if (hdr.opcode == 0) {
-                asio::read(sock, asio::buffer(buf, size), io_ec);
-            } else {
-                asio::write(sock, asio::buffer(buf, size), io_ec);
-            }
+            int      status_code = 0;
+            uint64_t transferred = 0;
+
+            bool ok = exchangeData(sock, entries, /*is_server=*/true,
+                                   meta_search_, status_code, transferred);
+
+            if (!ok) break;
+
+            ControlResponse resp{kControlMagic, status_code, transferred};
+            asio::write(sock, asio::buffer(&resp, sizeof(resp)), io_ec);
             if (io_ec) break;
         }
     }
-}
-
-// ── Server drives data transfer to client ────────────────────────────────────
-
-void TcpMinimalTransport::driveTransfers(
-    const std::string& client_ip, uint16_t data_port,
-    const std::vector<ConcreteTransfer>& xfers,
-    uint64_t& transferred_bytes) {
-
-    asio::io_context ctx;
-    tcp::socket      sock(ctx);
-    tcp::resolver    resolver(ctx);
-    asio::error_code ec;
-
-    auto endpoints =
-        resolver.resolve(client_ip, std::to_string(data_port), ec);
-    if (ec) {
-        LOG(WARNING) << "driveTransfers: resolve failed: " << ec.message();
-        return;
-    }
-
-    asio::connect(sock, endpoints, ec);
-    if (ec) {
-        LOG(WARNING) << "driveTransfers: connect failed: " << ec.message();
-        return;
-    }
-
-    for (const auto& xfer : xfers) {
-        DataSessionHeader hdr{};
-        hdr.size   = static_cast<uint64_t>(xfer.length);
-        hdr.addr   = xfer.remote_addr;
-        hdr.opcode = (xfer.opcode == OpCode::GET) ? 0 : 1;
-
-        asio::write(sock, asio::buffer(&hdr, sizeof(hdr)), ec);
-        if (ec) break;
-
-        if (xfer.opcode == OpCode::GET) {
-            asio::write(sock, asio::buffer(xfer.local_addr, xfer.length), ec);
-        } else {
-            asio::read(sock, asio::buffer(xfer.local_addr, xfer.length), ec);
-        }
-        if (!ec) transferred_bytes += xfer.length;
-        else break;
-    }
-
-    // Graceful shutdown: signal EOF so the client's runDataServer finishes
-    // reading before we send ControlResponse.
-    sock.shutdown(tcp::socket::shutdown_send, ec);
-    char drain[1];
-    asio::read(sock, asio::buffer(drain, sizeof(drain)), ec);
-    // ec == asio::error::eof is expected
 }
 
 // ── Client: submitAsync / pollBatch / freeBatch ───────────────────────────────
@@ -308,8 +283,6 @@ BatchID TcpMinimalTransport::submitAsync(
         batches_[bid] = state;
     }
 
-    uint16_t data_port = data_port_;
-
     // Prefer a pre-established persistent connection.
     std::string key = server_ip + ":" + std::to_string(server_ctrl_port);
     std::shared_ptr<PersistentConn> conn;
@@ -319,100 +292,77 @@ BatchID TcpMinimalTransport::submitAsync(
         if (it != conns_.end()) conn = it->second;
     }
 
+    auto run = [entries, state](auto& sock) {
+        asio::error_code ec;
+
+        ControlRequestHeader hdr{kControlMagic,
+                                  static_cast<uint16_t>(entries.size()),
+                                  0 /*data_port unused*/};
+        asio::write(sock, asio::buffer(&hdr, sizeof(hdr)), ec);
+        if (!ec) {
+            asio::write(sock,
+                        asio::buffer(entries.data(),
+                                     entries.size() * sizeof(RequestEntry)),
+                        ec);
+        }
+        if (ec) {
+            state->status.store(TransferStatusEnum::FAILED,
+                                std::memory_order_release);
+            return;
+        }
+
+        int      status_code = 0;
+        uint64_t transferred = 0;
+        bool ok = exchangeData(sock, entries, /*is_server=*/false,
+                               nullptr, status_code, transferred);
+        if (!ok) {
+            state->status.store(TransferStatusEnum::FAILED,
+                                std::memory_order_release);
+            return;
+        }
+
+        ControlResponse resp{};
+        asio::read(sock, asio::buffer(&resp, sizeof(resp)), ec);
+        if (ec || resp.magic != kControlMagic) {
+            state->status.store(TransferStatusEnum::FAILED,
+                                std::memory_order_release);
+            return;
+        }
+
+        state->transferred_bytes.store(resp.transferred_bytes,
+                                        std::memory_order_relaxed);
+        state->status.store(
+            resp.status == 0 ? TransferStatusEnum::COMPLETED
+                             : TransferStatusEnum::FAILED,
+            std::memory_order_release);
+    };
+
     if (conn) {
-        std::thread([entries, state, data_port, conn]() {
-            // Serialize requests on the shared connection.
+        std::thread([run, state, conn]() {
             std::lock_guard<std::mutex> lock(conn->mu);
-
-            asio::error_code ec;
-            ControlRequestHeader hdr{
-                kControlMagic,
-                static_cast<uint16_t>(entries.size()),
-                data_port};
-
-            asio::write(*conn->sock, asio::buffer(&hdr, sizeof(hdr)), ec);
-            if (!ec) {
-                asio::write(*conn->sock,
-                            asio::buffer(entries.data(),
-                                         entries.size() * sizeof(RequestEntry)),
-                            ec);
-            }
-            if (ec) {
-                state->status.store(TransferStatusEnum::FAILED,
-                                    std::memory_order_release);
-                return;
-            }
-
-            ControlResponse resp{};
-            asio::read(*conn->sock, asio::buffer(&resp, sizeof(resp)), ec);
-            if (ec || resp.magic != kControlMagic) {
-                state->status.store(TransferStatusEnum::FAILED,
-                                    std::memory_order_release);
-                return;
-            }
-
-            state->transferred_bytes.store(resp.transferred_bytes,
-                                           std::memory_order_relaxed);
-            state->status.store(
-                resp.status == 0 ? TransferStatusEnum::COMPLETED
-                                 : TransferStatusEnum::FAILED,
-                std::memory_order_release);
+            run(*conn->sock);
         }).detach();
     } else {
-        // No persistent connection: open a new connection for this batch.
-        std::thread([server_ip, server_ctrl_port, entries, state, data_port]() {
+        std::thread([server_ip, server_ctrl_port, run, state]() {
             asio::io_context ctx;
             tcp::socket      sock(ctx);
             tcp::resolver    resolver(ctx);
             asio::error_code ec;
 
-            auto eps =
-                resolver.resolve(server_ip, std::to_string(server_ctrl_port), ec);
+            auto eps = resolver.resolve(
+                server_ip, std::to_string(server_ctrl_port), ec);
             if (ec) {
                 state->status.store(TransferStatusEnum::FAILED,
                                     std::memory_order_release);
                 return;
             }
-
             asio::connect(sock, eps, ec);
             if (ec) {
                 state->status.store(TransferStatusEnum::FAILED,
                                     std::memory_order_release);
                 return;
             }
-
-            ControlRequestHeader hdr{
-                kControlMagic,
-                static_cast<uint16_t>(entries.size()),
-                data_port};
-
-            asio::write(sock, asio::buffer(&hdr, sizeof(hdr)), ec);
-            if (!ec) {
-                asio::write(sock,
-                            asio::buffer(entries.data(),
-                                         entries.size() * sizeof(RequestEntry)),
-                            ec);
-            }
-            if (ec) {
-                state->status.store(TransferStatusEnum::FAILED,
-                                    std::memory_order_release);
-                return;
-            }
-
-            ControlResponse resp{};
-            asio::read(sock, asio::buffer(&resp, sizeof(resp)), ec);
-            if (ec || resp.magic != kControlMagic) {
-                state->status.store(TransferStatusEnum::FAILED,
-                                    std::memory_order_release);
-                return;
-            }
-
-            state->transferred_bytes.store(resp.transferred_bytes,
-                                            std::memory_order_relaxed);
-            state->status.store(
-                resp.status == 0 ? TransferStatusEnum::COMPLETED
-                                 : TransferStatusEnum::FAILED,
-                std::memory_order_release);
+            run(sock);
         }).detach();
     }
 

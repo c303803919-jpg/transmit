@@ -60,12 +60,15 @@ struct ControlResponse {
     uint64_t transferred_bytes;
 };
 
-// ── Data wire format ──────────────────────────────────────────────────────────
+// ── Data wire format (inline: data flows on the same ctrl TCP connection) ─────
+//
+// The server sends one DataSessionHeader per RequestEntry before doing data I/O.
+// entry_status == 0 means data follows; non-zero is an errno (no data follows).
 
 struct DataSessionHeader {
     uint64_t size;
-    uint64_t addr;
-    uint8_t  opcode;  // 0=WRITE (push), 1=READ (pull)
+    uint64_t entry_status;  // 0=ok; non-zero=errno, no data bytes follow
+    uint8_t  opcode;        // 0=server→client (GET); 1=client→server (PUT)
 };
 
 // ── Server-internal ───────────────────────────────────────────────────────────
