@@ -1,10 +1,10 @@
-Start testing: May 14 11:01 CST
+Start testing: May 14 11:16 CST
 ----------------------------------------------------------
 1/1 Testing: tcp_kvoF_sw_test
 1/1 Test: tcp_kvoF_sw_test
 Command: "/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/ut/tcp_kvoF_sw_test"
 Directory: /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/ut
-"tcp_kvoF_sw_test" start time: May 14 11:01 CST
+"tcp_kvoF_sw_test" start time: May 14 11:16 CST
 Output:
 ----------------------------------------------------------
 Running main() from /private/tmp/googletest-20250808-4990-9ldiyw/googletest-1.17.0/googletest/src/gtest_main.cc
@@ -19,24 +19,124 @@ Running main() from /private/tmp/googletest-20250808-4990-9ldiyw/googletest-1.17
 
 [----------] 4 tests from TcpKVoF
 [ RUN      ] TcpKVoF.GetTransfer
-[       OK ] TcpKVoF.GetTransfer (160 ms)
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20260514 11:16:22.680730 0x700006d74000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19900
+I20260514 11:16:22.682361 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19900
+I20260514 11:16:22.683140 0x700006df7000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19902
+I20260514 11:16:22.683252 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19902
+I20260514 11:16:22.683671 0x700006e7a000 tcp_minimal_transport.cpp:474] [client] connecting to 127.0.0.1:19900
+I20260514 11:16:22.687088 0x700006e7a000 tcp_minimal_transport.cpp:496] [client] connected 127.0.0.1:19900 local=127.0.0.1:53635
+I20260514 11:16:22.687254 0x700006e7a000 tcp_minimal_transport.cpp:402] [client] → ControlRequestHeader count=1 server=127.0.0.1:19900
+I20260514 11:16:22.738124 0x700006d74000 tcp_minimal_transport.cpp:312] [server] accepted connection from 127.0.0.1:53635
+I20260514 11:16:22.738258 0x700006d74000 tcp_minimal_transport.cpp:331] [server] ctrl request from 127.0.0.1:53635 count=1
+I20260514 11:16:22.738303 0x700006d74000 tcp_minimal_transport.cpp:169] [server] entry[0] key=42 opcode=GET meta=HIT → DSH{size=4096 entry_status=0 opcode=0}
+I20260514 11:16:22.738471 0x700006d74000 tcp_minimal_transport.cpp:201] [server] entry[0] GET sent 4096 bytes in 0ms
+I20260514 11:16:22.738510 0x700006d74000 tcp_minimal_transport.cpp:355] [server] → ControlResponse status=0 transferred=4096 to 127.0.0.1:53635
+I20260514 11:16:22.740960 0x700006e7a000 tcp_minimal_transport.cpp:220] [client] entry[0] DSH{size=4096 entry_status=0 opcode=0} peer=127.0.0.1:19900
+I20260514 11:16:22.741055 0x700006e7a000 tcp_minimal_transport.cpp:250] [client] entry[0] GET recv 4096 bytes in 0ms peer=127.0.0.1:19900
+I20260514 11:16:22.741640 0x700006e7a000 tcp_minimal_transport.cpp:450] [client] ← ControlResponse status=0 transferred=4096 server=127.0.0.1:19900
+I20260514 11:16:22.741822 0x700006d74000 tcp_minimal_transport.cpp:365] [server] connection closed: 127.0.0.1:53635
+[       OK ] TcpKVoF.GetTransfer (116 ms)
 [ RUN      ] TcpKVoF.PutTransfer
-[       OK ] TcpKVoF.PutTransfer (164 ms)
+I20260514 11:16:22.797415 0x700006d74000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19910
+I20260514 11:16:22.797504 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19910
+I20260514 11:16:22.797886 0x700006df7000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19912
+I20260514 11:16:22.797939 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19912
+I20260514 11:16:22.798121 0x700006e7a000 tcp_minimal_transport.cpp:474] [client] connecting to 127.0.0.1:19910
+I20260514 11:16:22.798439 0x700006e7a000 tcp_minimal_transport.cpp:496] [client] connected 127.0.0.1:19910 local=127.0.0.1:53636
+I20260514 11:16:22.798474 0x700006e7a000 tcp_minimal_transport.cpp:402] [client] → ControlRequestHeader count=1 server=127.0.0.1:19910
+I20260514 11:16:22.852470 0x700006d74000 tcp_minimal_transport.cpp:312] [server] accepted connection from 127.0.0.1:53636
+I20260514 11:16:22.852526 0x700006d74000 tcp_minimal_transport.cpp:331] [server] ctrl request from 127.0.0.1:53636 count=1
+I20260514 11:16:22.852553 0x700006d74000 tcp_minimal_transport.cpp:169] [server] entry[0] key=99 opcode=PUT meta=HIT → DSH{size=4096 entry_status=0 opcode=1}
+I20260514 11:16:22.852664 0x700006e7a000 tcp_minimal_transport.cpp:220] [client] entry[0] DSH{size=4096 entry_status=0 opcode=1} peer=127.0.0.1:19910
+I20260514 11:16:22.852718 0x700006e7a000 tcp_minimal_transport.cpp:250] [client] entry[0] PUT sent 4096 bytes in 0ms peer=127.0.0.1:19910
+I20260514 11:16:22.852782 0x700006d74000 tcp_minimal_transport.cpp:201] [server] entry[0] PUT recv 4096 bytes in 0ms
+I20260514 11:16:22.852816 0x700006d74000 tcp_minimal_transport.cpp:355] [server] → ControlResponse status=0 transferred=4096 to 127.0.0.1:53636
+I20260514 11:16:22.852893 0x700006e7a000 tcp_minimal_transport.cpp:450] [client] ← ControlResponse status=0 transferred=4096 server=127.0.0.1:19910
+I20260514 11:16:22.853034 0x700006d74000 tcp_minimal_transport.cpp:365] [server] connection closed: 127.0.0.1:53636
+[       OK ] TcpKVoF.PutTransfer (165 ms)
 [ RUN      ] TcpKVoF.MetaSearchMiss
-[       OK ] TcpKVoF.MetaSearchMiss (163 ms)
+I20260514 11:16:22.962998 0x700006d74000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19920
+I20260514 11:16:22.963113 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19920
+I20260514 11:16:22.963392 0x700006df7000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19922
+I20260514 11:16:22.963463 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19922
+I20260514 11:16:22.963622 0x700006e7a000 tcp_minimal_transport.cpp:474] [client] connecting to 127.0.0.1:19920
+I20260514 11:16:22.963950 0x700006e7a000 tcp_minimal_transport.cpp:496] [client] connected 127.0.0.1:19920 local=127.0.0.1:53639
+I20260514 11:16:22.963985 0x700006e7a000 tcp_minimal_transport.cpp:402] [client] → ControlRequestHeader count=1 server=127.0.0.1:19920
+I20260514 11:16:23.013228 0x700006d74000 tcp_minimal_transport.cpp:312] [server] accepted connection from 127.0.0.1:53639
+I20260514 11:16:23.013290 0x700006d74000 tcp_minimal_transport.cpp:331] [server] ctrl request from 127.0.0.1:53639 count=1
+I20260514 11:16:23.013319 0x700006d74000 tcp_minimal_transport.cpp:169] [server] entry[0] key=9999 opcode=GET meta=MISS → DSH{size=0 entry_status=2 opcode=0}
+I20260514 11:16:23.013376 0x700006d74000 tcp_minimal_transport.cpp:355] [server] → ControlResponse status=2 transferred=0 to 127.0.0.1:53639
+I20260514 11:16:23.013467 0x700006e7a000 tcp_minimal_transport.cpp:220] [client] entry[0] DSH{size=0 entry_status=2 opcode=0} peer=127.0.0.1:19920
+W20260514 11:16:23.013508 0x700006e7a000 tcp_minimal_transport.cpp:227] [client] entry[0] server error entry_status=2 (No such file or directory)
+I20260514 11:16:23.013538 0x700006e7a000 tcp_minimal_transport.cpp:450] [client] ← ControlResponse status=2 transferred=0 server=127.0.0.1:19920
+I20260514 11:16:23.013632 0x700006d74000 tcp_minimal_transport.cpp:365] [server] connection closed: 127.0.0.1:53639
+[       OK ] TcpKVoF.MetaSearchMiss (158 ms)
 [ RUN      ] TcpKVoF.ConcurrentBatches
-[       OK ] TcpKVoF.ConcurrentBatches (163 ms)
-[----------] 4 tests from TcpKVoF (653 ms total)
+I20260514 11:16:23.121544 0x700006d74000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19930
+I20260514 11:16:23.121623 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19930
+I20260514 11:16:23.122196 0x700006df7000 tcp_minimal_transport.cpp:288] [server] ctrl acceptor listening on port 19932
+I20260514 11:16:23.122256 0x7ff84f302100 tcp_minimal_transport.cpp:65] [transport] init done: bind=127.0.0.1 ctrl_port=19932
+I20260514 11:16:23.122626 0x700006efd000 tcp_minimal_transport.cpp:474] [client] connecting to 127.0.0.1:19930
+I20260514 11:16:23.122631 0x700006f80000 tcp_minimal_transport.cpp:474] [client] connecting to 127.0.0.1:19930
+I20260514 11:16:23.122665 0x700006e7a000 tcp_minimal_transport.cpp:474] [client] connecting to 127.0.0.1:19930
+I20260514 11:16:23.122712 0x700007003000 tcp_minimal_transport.cpp:474] [client] connecting to 127.0.0.1:19930
+I20260514 11:16:23.123109 0x700006efd000 tcp_minimal_transport.cpp:496] [client] connected 127.0.0.1:19930 local=127.0.0.1:53640
+I20260514 11:16:23.123136 0x700006e7a000 tcp_minimal_transport.cpp:496] [client] connected 127.0.0.1:19930 local=127.0.0.1:53642
+I20260514 11:16:23.123124 0x700006f80000 tcp_minimal_transport.cpp:496] [client] connected 127.0.0.1:19930 local=127.0.0.1:53641
+I20260514 11:16:23.123145 0x700006efd000 tcp_minimal_transport.cpp:402] [client] → ControlRequestHeader count=1 server=127.0.0.1:19930
+I20260514 11:16:23.123151 0x700007003000 tcp_minimal_transport.cpp:496] [client] connected 127.0.0.1:19930 local=127.0.0.1:53643
+I20260514 11:16:23.123195 0x700006f80000 tcp_minimal_transport.cpp:402] [client] → ControlRequestHeader count=1 server=127.0.0.1:19930
+I20260514 11:16:23.123215 0x700007003000 tcp_minimal_transport.cpp:402] [client] → ControlRequestHeader count=1 server=127.0.0.1:19930
+I20260514 11:16:23.123169 0x700006e7a000 tcp_minimal_transport.cpp:402] [client] → ControlRequestHeader count=1 server=127.0.0.1:19930
+I20260514 11:16:23.173226 0x700006d74000 tcp_minimal_transport.cpp:312] [server] accepted connection from 127.0.0.1:53640
+I20260514 11:16:23.173328 0x700006d74000 tcp_minimal_transport.cpp:331] [server] ctrl request from 127.0.0.1:53640 count=1
+I20260514 11:16:23.173360 0x700006d74000 tcp_minimal_transport.cpp:169] [server] entry[0] key=1 opcode=GET meta=HIT → DSH{size=4096 entry_status=0 opcode=0}
+I20260514 11:16:23.173424 0x700006d74000 tcp_minimal_transport.cpp:201] [server] entry[0] GET sent 4096 bytes in 0ms
+I20260514 11:16:23.173450 0x700006d74000 tcp_minimal_transport.cpp:355] [server] → ControlResponse status=0 transferred=4096 to 127.0.0.1:53640
+I20260514 11:16:23.173498 0x700006efd000 tcp_minimal_transport.cpp:220] [client] entry[0] DSH{size=4096 entry_status=0 opcode=0} peer=127.0.0.1:19930
+I20260514 11:16:23.173599 0x700006efd000 tcp_minimal_transport.cpp:250] [client] entry[0] GET recv 4096 bytes in 0ms peer=127.0.0.1:19930
+I20260514 11:16:23.173628 0x700006efd000 tcp_minimal_transport.cpp:450] [client] ← ControlResponse status=0 transferred=4096 server=127.0.0.1:19930
+I20260514 11:16:23.173812 0x700006d74000 tcp_minimal_transport.cpp:365] [server] connection closed: 127.0.0.1:53640
+I20260514 11:16:23.173935 0x700006d74000 tcp_minimal_transport.cpp:312] [server] accepted connection from 127.0.0.1:53641
+I20260514 11:16:23.174070 0x700006d74000 tcp_minimal_transport.cpp:331] [server] ctrl request from 127.0.0.1:53641 count=1
+I20260514 11:16:23.174156 0x700006d74000 tcp_minimal_transport.cpp:169] [server] entry[0] key=2 opcode=GET meta=HIT → DSH{size=4096 entry_status=0 opcode=0}
+I20260514 11:16:23.174214 0x700006d74000 tcp_minimal_transport.cpp:201] [server] entry[0] GET sent 4096 bytes in 0ms
+I20260514 11:16:23.174273 0x700006d74000 tcp_minimal_transport.cpp:355] [server] → ControlResponse status=0 transferred=4096 to 127.0.0.1:53641
+I20260514 11:16:23.174469 0x700006f80000 tcp_minimal_transport.cpp:220] [client] entry[0] DSH{size=4096 entry_status=0 opcode=0} peer=127.0.0.1:19930
+I20260514 11:16:23.174534 0x700006f80000 tcp_minimal_transport.cpp:250] [client] entry[0] GET recv 4096 bytes in 0ms peer=127.0.0.1:19930
+I20260514 11:16:23.174562 0x700006f80000 tcp_minimal_transport.cpp:450] [client] ← ControlResponse status=0 transferred=4096 server=127.0.0.1:19930
+I20260514 11:16:23.175107 0x700006d74000 tcp_minimal_transport.cpp:365] [server] connection closed: 127.0.0.1:53641
+I20260514 11:16:23.175194 0x700006d74000 tcp_minimal_transport.cpp:312] [server] accepted connection from 127.0.0.1:53642
+I20260514 11:16:23.175220 0x700006d74000 tcp_minimal_transport.cpp:331] [server] ctrl request from 127.0.0.1:53642 count=1
+I20260514 11:16:23.175244 0x700006d74000 tcp_minimal_transport.cpp:169] [server] entry[0] key=0 opcode=GET meta=HIT → DSH{size=4096 entry_status=0 opcode=0}
+I20260514 11:16:23.175293 0x700006d74000 tcp_minimal_transport.cpp:201] [server] entry[0] GET sent 4096 bytes in 0ms
+I20260514 11:16:23.175311 0x700006d74000 tcp_minimal_transport.cpp:355] [server] → ControlResponse status=0 transferred=4096 to 127.0.0.1:53642
+I20260514 11:16:23.175489 0x700006e7a000 tcp_minimal_transport.cpp:220] [client] entry[0] DSH{size=4096 entry_status=0 opcode=0} peer=127.0.0.1:19930
+I20260514 11:16:23.175581 0x700006e7a000 tcp_minimal_transport.cpp:250] [client] entry[0] GET recv 4096 bytes in 0ms peer=127.0.0.1:19930
+I20260514 11:16:23.175635 0x700006e7a000 tcp_minimal_transport.cpp:450] [client] ← ControlResponse status=0 transferred=4096 server=127.0.0.1:19930
+I20260514 11:16:23.175780 0x700006d74000 tcp_minimal_transport.cpp:365] [server] connection closed: 127.0.0.1:53642
+I20260514 11:16:23.175874 0x700006d74000 tcp_minimal_transport.cpp:312] [server] accepted connection from 127.0.0.1:53643
+I20260514 11:16:23.175904 0x700006d74000 tcp_minimal_transport.cpp:331] [server] ctrl request from 127.0.0.1:53643 count=1
+I20260514 11:16:23.175986 0x700006d74000 tcp_minimal_transport.cpp:169] [server] entry[0] key=3 opcode=GET meta=HIT → DSH{size=4096 entry_status=0 opcode=0}
+I20260514 11:16:23.176112 0x700006d74000 tcp_minimal_transport.cpp:201] [server] entry[0] GET sent 4096 bytes in 0ms
+I20260514 11:16:23.176146 0x700006d74000 tcp_minimal_transport.cpp:355] [server] → ControlResponse status=0 transferred=4096 to 127.0.0.1:53643
+I20260514 11:16:23.176323 0x700007003000 tcp_minimal_transport.cpp:220] [client] entry[0] DSH{size=4096 entry_status=0 opcode=0} peer=127.0.0.1:19930
+I20260514 11:16:23.176422 0x700007003000 tcp_minimal_transport.cpp:250] [client] entry[0] GET recv 4096 bytes in 0ms peer=127.0.0.1:19930
+I20260514 11:16:23.176457 0x700007003000 tcp_minimal_transport.cpp:450] [client] ← ControlResponse status=0 transferred=4096 server=127.0.0.1:19930
+I20260514 11:16:23.176606 0x700006d74000 tcp_minimal_transport.cpp:365] [server] connection closed: 127.0.0.1:53643
+[       OK ] TcpKVoF.ConcurrentBatches (109 ms)
+[----------] 4 tests from TcpKVoF (549 ms total)
 
 [----------] Global test environment tear-down
-[==========] 6 tests from 2 test suites ran. (653 ms total)
+[==========] 6 tests from 2 test suites ran. (550 ms total)
 [  PASSED  ] 6 tests.
 <end of output>
-Test time =   1.05 sec
+Test time =   2.33 sec
 ----------------------------------------------------------
 Test Passed.
-"tcp_kvoF_sw_test" end time: May 14 11:01 CST
-"tcp_kvoF_sw_test" time elapsed: 00:00:01
+"tcp_kvoF_sw_test" end time: May 14 11:16 CST
+"tcp_kvoF_sw_test" time elapsed: 00:00:02
 ----------------------------------------------------------
 
-End testing: May 14 11:01 CST
+End testing: May 14 11:16 CST

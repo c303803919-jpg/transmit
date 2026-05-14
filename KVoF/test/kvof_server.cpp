@@ -11,7 +11,9 @@
 #include <chrono>
 #include <csignal>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -20,14 +22,37 @@
 
 #include "kvoF_transport.h"
 
+// Compile-time build timestamp used as a simple version ID.
+static constexpr const char* kBuildVersion = __DATE__ " " __TIME__;
+
 using namespace mooncake::minimal;
+
+// ── Timestamp helper ──────────────────────────────────────────────────────────
+
+static std::string nowStr() {
+    using namespace std::chrono;
+    auto now  = system_clock::now();
+    auto t    = system_clock::to_time_t(now);
+    auto ms   = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+    std::tm tm_buf{};
+    localtime_r(&t, &tm_buf);
+    std::ostringstream oss;
+    oss << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S")
+        << '.' << std::setfill('0') << std::setw(3) << ms.count();
+    return oss.str();
+}
+
+// ── Signal handling ───────────────────────────────────────────────────────────
 
 static volatile sig_atomic_t g_stop = 0;
 static void sighandler(int) { g_stop = 1; }
 
+// ── Main ──────────────────────────────────────────────────────────────────────
+
 int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
     FLAGS_logtostderr = 1;
+    FLAGS_minloglevel = 0;  // INFO and above
 
     std::string ip        = "0.0.0.0";
     uint16_t    port      = 20000;
@@ -47,33 +72,50 @@ int main(int argc, char** argv) {
         }
     }
 
+    std::cout << "=== kvof_server ===\n"
+              << "build:     " << kBuildVersion << "\n"
+              << "started:   " << nowStr() << "\n"
+              << "ip:        " << ip << "\n"
+              << "port:      " << port << "\n"
+              << "slots:     " << slots << "\n"
+              << "slot_size: " << slot_size << " bytes\n"
+              << std::flush;
+
     KVoFTransport transport;
     auto s = transport.init(ip, port, "tcp");
     if (!s.ok()) {
-        std::cerr << "init failed: " << s.ToString() << "\n";
+        std::cerr << "[" << nowStr() << "] ERROR init: " << s.ToString() << "\n";
         return 1;
     }
 
     MemRegion region;
     s = transport.allocateCache(slots * slot_size, slot_size, region);
     if (!s.ok()) {
-        std::cerr << "allocateCache failed: " << s.ToString() << "\n";
+        std::cerr << "[" << nowStr() << "] ERROR allocateCache: " << s.ToString() << "\n";
         return 1;
     }
 
     std::vector<MemRegion> srv_slots(slots);
     for (size_t i = 0; i < slots; ++i) {
         if (!transport.acquireSlot(srv_slots[i]).ok()) {
-            std::cerr << "acquireSlot " << i << " failed\n";
+            std::cerr << "[" << nowStr() << "] ERROR acquireSlot " << i << "\n";
             return 1;
         }
-        std::memset(srv_slots[i].addr,
-                    static_cast<uint8_t>((i + 1) & 0xFF),
-                    slot_size);
+        uint8_t fill = static_cast<uint8_t>((i + 1) & 0xFF);
+        std::memset(srv_slots[i].addr, fill, slot_size);
+        std::cout << "slot[" << i << "] addr=" << srv_slots[i].addr
+                  << " fill=0x" << std::hex << std::setw(2) << std::setfill('0')
+                  << static_cast<int>(fill) << std::dec << "\n";
     }
+    std::cout << std::flush;
 
     transport.setMetaSearch([&](uint64_t key) -> MemRegion {
-        if (key < slots) return srv_slots[key];
+        if (key < slots) {
+            LOG(INFO) << "[server] MetaSearch key=" << key
+                      << " → HIT addr=" << srv_slots[key].addr;
+            return srv_slots[key];
+        }
+        LOG(INFO) << "[server] MetaSearch key=" << key << " → MISS";
         return {};
     });
 
@@ -82,15 +124,15 @@ int main(int argc, char** argv) {
 
     std::cout << "READY ip=" << ip
               << " ctrl_port=" << port
-              << " data_port=" << (port + 1)
               << " slots=" << slots
               << " slot_size=" << slot_size
+              << " build=" << kBuildVersion
               << "\n" << std::flush;
 
     while (!g_stop) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
-    std::cout << "Server shutting down\n";
+    std::cout << "[" << nowStr() << "] Server shutting down\n";
     return 0;
 }

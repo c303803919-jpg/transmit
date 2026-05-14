@@ -5,15 +5,14 @@
 //               [--local-ip <IP>] [--local-port <PORT>]
 //               [--slot-size <bytes>]
 //
-// Runs 4 test cases and prints PASS/FAIL per case.
+// Runs 4 test cases and prints PASS/FAIL with timing.
 // Exits 0 if all pass, non-zero otherwise.
-//
-// Expected server state (kvof_server defaults):
-//   slot[i] filled with byte (i+1) & 0xFF, MetaSearch: key k → slot k
 
 #include <chrono>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
@@ -22,16 +21,34 @@
 
 #include "kvoF_transport.h"
 
-using namespace mooncake::minimal;
+static constexpr const char* kBuildVersion = __DATE__ " " __TIME__;
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+using namespace mooncake::minimal;
+using Clk = std::chrono::steady_clock;
+using Ms  = std::chrono::milliseconds;
+
+// ── Timestamp helper ──────────────────────────────────────────────────────────
+
+static std::string nowStr() {
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    auto t   = system_clock::to_time_t(now);
+    auto ms  = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+    std::tm tm_buf{};
+    localtime_r(&t, &tm_buf);
+    std::ostringstream oss;
+    oss << std::put_time(&tm_buf, "%H:%M:%S")
+        << '.' << std::setfill('0') << std::setw(3) << ms.count();
+    return oss.str();
+}
+
+// ── Poll helper ───────────────────────────────────────────────────────────────
 
 static TransferStatusEnum waitPoll(KVoFTransport& t, BatchID bid,
                                     int timeout_ms = 10000) {
-    auto deadline = std::chrono::steady_clock::now() +
-                    std::chrono::milliseconds(timeout_ms);
+    auto deadline = Clk::now() + Ms(timeout_ms);
     TransferStatus st;
-    while (std::chrono::steady_clock::now() < deadline) {
+    while (Clk::now() < deadline) {
         t.pollBatch(bid, st);
         if (st.status != TransferStatusEnum::PENDING) return st.status;
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -39,17 +56,19 @@ static TransferStatusEnum waitPoll(KVoFTransport& t, BatchID bid,
     return TransferStatusEnum::FAILED;
 }
 
-static void report(const char* name, bool ok) {
-    std::cout << "[" << (ok ? "PASS" : "FAIL") << "] " << name << "\n"
-              << std::flush;
+// ── Report ────────────────────────────────────────────────────────────────────
+
+static void report(const char* name, bool ok, long ms) {
+    std::cout << "[" << (ok ? "PASS" : "FAIL") << "] " << name
+              << "  (" << ms << "ms)\n" << std::flush;
 }
 
 // ── Test cases ────────────────────────────────────────────────────────────────
 
-// GET key=0: server slot[0] pre-filled with 0x01; verify client receives 0x01.
+// GET key=0: verify 0x01 in every byte.
 static bool testGet(KVoFTransport& client,
                     const std::string& srv_ip, uint16_t srv_port,
-                    size_t slot_size) {
+                    size_t slot_size, long& elapsed_ms) {
     MemRegion slot;
     if (!client.acquireSlot(slot).ok()) return false;
     std::memset(slot.addr, 0x00, slot_size);
@@ -60,15 +79,26 @@ static bool testGet(KVoFTransport& client,
     e.client_addr = reinterpret_cast<uint64_t>(slot.addr);
     e.size        = static_cast<uint32_t>(slot_size);
 
+    auto t0 = Clk::now();
     BatchID bid = client.submitAsync(srv_ip, srv_port, {e});
     if (bid == kInvalidBatchID) { client.releaseSlot(slot.addr); return false; }
 
-    bool ok = (waitPoll(client, bid) == TransferStatusEnum::COMPLETED);
+    auto result = waitPoll(client, bid);
+    elapsed_ms = std::chrono::duration_cast<Ms>(Clk::now() - t0).count();
 
+    bool ok = (result == TransferStatusEnum::COMPLETED);
     if (ok) {
         auto* buf = static_cast<uint8_t*>(slot.addr);
-        for (size_t i = 0; i < slot_size && ok; ++i)
-            ok = (buf[i] == 0x01);
+        for (size_t i = 0; i < slot_size && ok; ++i) {
+            if (buf[i] != 0x01) {
+                std::cerr << "  byte[" << i << "]=0x" << std::hex
+                          << static_cast<int>(buf[i]) << std::dec
+                          << " expected=0x01\n";
+                ok = false;
+            }
+        }
+    } else {
+        std::cerr << "  status=" << static_cast<int>(result) << " (not COMPLETED)\n";
     }
 
     client.releaseSlot(slot.addr);
@@ -76,10 +106,12 @@ static bool testGet(KVoFTransport& client,
     return ok;
 }
 
-// PUT key=1 with 0xEE, then GET key=1 back; verify 0xEE.
+// PUT key=1 with 0xEE, then GET key=1; verify 0xEE.
 static bool testPutGet(KVoFTransport& client,
                        const std::string& srv_ip, uint16_t srv_port,
-                       size_t slot_size) {
+                       size_t slot_size, long& elapsed_ms) {
+    auto t0 = Clk::now();
+
     // PUT
     MemRegion put_slot;
     if (!client.acquireSlot(put_slot).ok()) return false;
@@ -97,7 +129,11 @@ static bool testPutGet(KVoFTransport& client,
     bool ok = (waitPoll(client, pbid) == TransferStatusEnum::COMPLETED);
     client.releaseSlot(put_slot.addr);
     client.freeBatch(pbid);
-    if (!ok) return false;
+    if (!ok) {
+        elapsed_ms = std::chrono::duration_cast<Ms>(Clk::now() - t0).count();
+        std::cerr << "  PUT step failed\n";
+        return false;
+    }
 
     // GET back
     MemRegion get_slot;
@@ -113,11 +149,22 @@ static bool testPutGet(KVoFTransport& client,
     BatchID gbid = client.submitAsync(srv_ip, srv_port, {ge});
     if (gbid == kInvalidBatchID) { client.releaseSlot(get_slot.addr); return false; }
 
-    ok = (waitPoll(client, gbid) == TransferStatusEnum::COMPLETED);
+    auto result = waitPoll(client, gbid);
+    elapsed_ms = std::chrono::duration_cast<Ms>(Clk::now() - t0).count();
+    ok = (result == TransferStatusEnum::COMPLETED);
+
     if (ok) {
         auto* buf = static_cast<uint8_t*>(get_slot.addr);
-        for (size_t i = 0; i < slot_size && ok; ++i)
-            ok = (buf[i] == 0xEE);
+        for (size_t i = 0; i < slot_size && ok; ++i) {
+            if (buf[i] != 0xEE) {
+                std::cerr << "  byte[" << i << "]=0x" << std::hex
+                          << static_cast<int>(buf[i]) << std::dec
+                          << " expected=0xEE\n";
+                ok = false;
+            }
+        }
+    } else {
+        std::cerr << "  GET-back status=" << static_cast<int>(result) << "\n";
     }
 
     client.releaseSlot(get_slot.addr);
@@ -125,10 +172,10 @@ static bool testPutGet(KVoFTransport& client,
     return ok;
 }
 
-// GET nonexistent key → server MetaSearch returns empty → FAILED status.
+// GET key=9999 → must produce FAILED (MetaSearch miss).
 static bool testMetaMiss(KVoFTransport& client,
                          const std::string& srv_ip, uint16_t srv_port,
-                         size_t slot_size) {
+                         size_t slot_size, long& elapsed_ms) {
     MemRegion slot;
     if (!client.acquireSlot(slot).ok()) return false;
 
@@ -138,10 +185,17 @@ static bool testMetaMiss(KVoFTransport& client,
     e.client_addr = reinterpret_cast<uint64_t>(slot.addr);
     e.size        = static_cast<uint32_t>(slot_size);
 
+    auto t0 = Clk::now();
     BatchID bid = client.submitAsync(srv_ip, srv_port, {e});
     if (bid == kInvalidBatchID) { client.releaseSlot(slot.addr); return false; }
 
-    bool ok = (waitPoll(client, bid) == TransferStatusEnum::FAILED);
+    auto result = waitPoll(client, bid);
+    elapsed_ms = std::chrono::duration_cast<Ms>(Clk::now() - t0).count();
+
+    bool ok = (result == TransferStatusEnum::FAILED);
+    if (!ok)
+        std::cerr << "  expected FAILED, got status="
+                  << static_cast<int>(result) << "\n";
 
     client.releaseSlot(slot.addr);
     client.freeBatch(bid);
@@ -149,16 +203,18 @@ static bool testMetaMiss(KVoFTransport& client,
 }
 
 // 4 concurrent GETs for keys 4-7 (untouched by earlier tests).
-// Server slot[k] is pre-filled with byte (k+1) & 0xFF → keys 4-7 → bytes 5-8.
+// Server slot[k] pre-filled with (k+1)&0xFF → keys 4-7 → bytes 5-8.
 static bool testConcurrent(KVoFTransport& client,
                             const std::string& srv_ip, uint16_t srv_port,
-                            size_t slot_size) {
-    constexpr int    kN       = 4;
-    constexpr uint64_t kBase  = 4;  // start at key=4 to avoid slots dirtied by PUT test
+                            size_t slot_size, long& elapsed_ms) {
+    constexpr int      kN    = 4;
+    constexpr uint64_t kBase = 4;
 
     std::vector<MemRegion> slots(kN);
     std::vector<BatchID>   bids(kN, kInvalidBatchID);
     bool setup_ok = true;
+
+    auto t0 = Clk::now();
 
     for (int i = 0; i < kN && setup_ok; ++i) {
         if (!client.acquireSlot(slots[i]).ok()) { setup_ok = false; break; }
@@ -179,18 +235,31 @@ static bool testConcurrent(KVoFTransport& client,
         if (!slots[i].addr) continue;
 
         if (bids[i] != kInvalidBatchID) {
-            if (waitPoll(client, bids[i]) != TransferStatusEnum::COMPLETED) {
+            auto result = waitPoll(client, bids[i]);
+            if (result != TransferStatusEnum::COMPLETED) {
+                std::cerr << "  batch[" << i << "] key=" << (kBase + i)
+                          << " status=" << static_cast<int>(result) << "\n";
                 ok = false;
             } else {
                 auto* buf = static_cast<uint8_t*>(slots[i].addr);
                 uint8_t expected = static_cast<uint8_t>((kBase + i + 1) & 0xFF);
-                for (size_t b = 0; b < slot_size && ok; ++b)
-                    ok = (buf[b] == expected);
+                for (size_t b = 0; b < slot_size && ok; ++b) {
+                    if (buf[b] != expected) {
+                        std::cerr << "  batch[" << i << "] byte[" << b
+                                  << "]=0x" << std::hex
+                                  << static_cast<int>(buf[b]) << std::dec
+                                  << " expected=0x" << std::hex
+                                  << static_cast<int>(expected) << std::dec << "\n";
+                        ok = false;
+                    }
+                }
             }
             client.freeBatch(bids[i]);
         }
         client.releaseSlot(slots[i].addr);
     }
+
+    elapsed_ms = std::chrono::duration_cast<Ms>(Clk::now() - t0).count();
     return ok;
 }
 
@@ -199,12 +268,13 @@ static bool testConcurrent(KVoFTransport& client,
 int main(int argc, char** argv) {
     google::InitGoogleLogging(argv[0]);
     FLAGS_logtostderr = 1;
+    FLAGS_minloglevel = 0;
 
-    std::string srv_ip    = "127.0.0.1";
-    uint16_t    srv_port  = 20000;
-    std::string local_ip  = "0.0.0.0";
+    std::string srv_ip     = "127.0.0.1";
+    uint16_t    srv_port   = 20000;
+    std::string local_ip   = "0.0.0.0";
     uint16_t    local_port = 20010;
-    size_t      slot_size = 4096;
+    size_t      slot_size  = 4096;
 
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
@@ -221,40 +291,55 @@ int main(int argc, char** argv) {
         }
     }
 
-    std::cout << "Connecting to server " << srv_ip << ":" << srv_port << "\n";
+    std::cout << "=== kvof_client ===\n"
+              << "build:      " << kBuildVersion << "\n"
+              << "started:    " << nowStr() << "\n"
+              << "server:     " << srv_ip << ":" << srv_port << "\n"
+              << "local:      " << local_ip << ":" << local_port << "\n"
+              << "slot_size:  " << slot_size << " bytes\n"
+              << std::flush;
 
     KVoFTransport client;
     auto s = client.init(local_ip, local_port, "tcp");
     if (!s.ok()) {
-        std::cerr << "client init failed: " << s.ToString() << "\n";
+        std::cerr << "[" << nowStr() << "] ERROR client init: " << s.ToString() << "\n";
         return 1;
     }
 
     MemRegion region;
     s = client.allocateCache(slot_size * 16, slot_size, region);
     if (!s.ok()) {
-        std::cerr << "allocateCache failed: " << s.ToString() << "\n";
+        std::cerr << "[" << nowStr() << "] ERROR allocateCache: " << s.ToString() << "\n";
         return 1;
     }
 
+    std::cout << "─────────────────────────────────────────────────────\n"
+              << std::flush;
+
     int failed = 0;
+    long ms = 0;
 
-    bool r1 = testGet(client, srv_ip, srv_port, slot_size);
-    report("GET key=0 → verify 0x01", r1);
-    if (!r1) ++failed;
+    auto run = [&](const char* name, auto fn) {
+        std::cout << "[....] " << name << "\n" << std::flush;
+        bool ok = fn(ms);
+        report(name, ok, ms);
+        if (!ok) ++failed;
+    };
 
-    bool r2 = testPutGet(client, srv_ip, srv_port, slot_size);
-    report("PUT key=1 (0xEE) then GET → verify 0xEE", r2);
-    if (!r2) ++failed;
+    run("GET key=0 → verify 0x01",
+        [&](long& t) { return testGet(client, srv_ip, srv_port, slot_size, t); });
 
-    bool r3 = testMetaMiss(client, srv_ip, srv_port, slot_size);
-    report("GET key=9999 → FAILED (meta miss)", r3);
-    if (!r3) ++failed;
+    run("PUT key=1 (0xEE) then GET → verify 0xEE",
+        [&](long& t) { return testPutGet(client, srv_ip, srv_port, slot_size, t); });
 
-    bool r4 = testConcurrent(client, srv_ip, srv_port, slot_size);
-    report("4 concurrent GETs keys 0-3 → verify fill bytes", r4);
-    if (!r4) ++failed;
+    run("GET key=9999 → FAILED (meta miss)",
+        [&](long& t) { return testMetaMiss(client, srv_ip, srv_port, slot_size, t); });
 
-    std::cout << "\n" << (4 - failed) << "/4 tests passed.\n";
+    run("4 concurrent GETs keys 4-7 → verify fill bytes",
+        [&](long& t) { return testConcurrent(client, srv_ip, srv_port, slot_size, t); });
+
+    std::cout << "─────────────────────────────────────────────────────\n"
+              << (4 - failed) << "/4 passed"
+              << "  finished: " << nowStr() << "\n";
     return (failed == 0) ? 0 : 1;
 }
