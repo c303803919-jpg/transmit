@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/tcp_kvoF_sw_test.dir/tcp_kvoF_sw_test.cpp.o -o tcp_kvoF_sw_test  -Wl,-rpath,/usr/local/lib ../src/libkvoF_transport.a /usr/local/lib/libgtest.a /usr/local/lib/libgtest_main.a /usr/local/lib/libglog.0.7.1.dylib /usr/local/lib/libgflags.2.3.0.dylib -lpthread /usr/local/lib/libgtest.a
