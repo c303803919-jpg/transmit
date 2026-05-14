@@ -152,6 +152,32 @@ tcp_kvoF_sw_test/fast:
 	$(MAKE) $(MAKESILENT) -f ut/CMakeFiles/tcp_kvoF_sw_test.dir/build.make ut/CMakeFiles/tcp_kvoF_sw_test.dir/build
 .PHONY : tcp_kvoF_sw_test/fast
 
+#=============================================================================
+# Target rules for targets named kvof_server
+
+# Build rule for target.
+kvof_server: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 kvof_server
+.PHONY : kvof_server
+
+# fast build rule for target.
+kvof_server/fast:
+	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/kvof_server.dir/build.make test/CMakeFiles/kvof_server.dir/build
+.PHONY : kvof_server/fast
+
+#=============================================================================
+# Target rules for targets named kvof_client
+
+# Build rule for target.
+kvof_client: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 kvof_client
+.PHONY : kvof_client
+
+# fast build rule for target.
+kvof_client/fast:
+	$(MAKE) $(MAKESILENT) -f test/CMakeFiles/kvof_client.dir/build.make test/CMakeFiles/kvof_client.dir/build
+.PHONY : kvof_client/fast
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,6 +188,8 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... test"
 	@echo "... kvoF_transport"
+	@echo "... kvof_client"
+	@echo "... kvof_server"
 	@echo "... tcp_kvoF_sw_test"
 .PHONY : help
 

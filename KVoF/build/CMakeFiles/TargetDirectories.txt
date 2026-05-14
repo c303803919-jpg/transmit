@@ -9,3 +9,8 @@
 /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/ut/CMakeFiles/test.dir
 /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/ut/CMakeFiles/edit_cache.dir
 /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/ut/CMakeFiles/rebuild_cache.dir
+/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/test/CMakeFiles/kvof_server.dir
+/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/test/CMakeFiles/kvof_client.dir
+/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/test/CMakeFiles/test.dir
+/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/test/CMakeFiles/edit_cache.dir
+/Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build/test/CMakeFiles/rebuild_cache.dir
