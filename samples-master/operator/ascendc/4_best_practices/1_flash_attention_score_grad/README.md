@@ -1,1 +1,0 @@
-[cann-ops-adv仓的fag](https://gitee.com/ascend/cann-ops-adv/tree/master/examples/transformer/flash_attention_score_grad)（待补充）

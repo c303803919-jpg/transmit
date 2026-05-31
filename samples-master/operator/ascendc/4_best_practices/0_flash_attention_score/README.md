@@ -1,1 +1,0 @@
-[cann-ops-adv仓的fa](https://gitee.com/ascend/cann-ops-adv/tree/master/examples/transformer/flash_attention_score)（待补充）
