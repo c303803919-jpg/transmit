@@ -1,9 +1,0 @@
-# CMake generated Testfile for 
-# Source directory: /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF
-# Build directory: /Users/warren/home/mooncake/mooncake-transfer-engine/KVoF/build
-# 
-# This file includes the relevant testing commands required for 
-# testing this directory and lists subdirectories to be tested as well.
-subdirs("src")
-subdirs("ut")
-subdirs("test")

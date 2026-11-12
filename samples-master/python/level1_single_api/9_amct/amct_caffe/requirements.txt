@@ -1,7 +1,0 @@
-lmdb
-numpy
-opencv-python
-protobuf
-stat
-tools
-wget

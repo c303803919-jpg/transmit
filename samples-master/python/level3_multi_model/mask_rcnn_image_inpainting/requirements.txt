@@ -1,3 +1,0 @@
-mmcv
-easydict==1.9
-matplotlib==3.3.4

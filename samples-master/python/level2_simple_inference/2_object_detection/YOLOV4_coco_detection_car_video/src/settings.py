@@ -1,2 +1,0 @@
-"ORIGINAL_SIZE of picture"
-ORIGINAL_SIZE = 1280, 720

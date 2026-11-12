@@ -1,1 +1,0 @@
-Ascend C使用npu debug tool（待补充）
