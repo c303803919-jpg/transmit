@@ -1,6 +1,6 @@
 # KV 缓存 TTL 与推理系统性价比分析报告
 
-2026-11-12
+2026-11-13 更新
 
 ## 核心结论
 
@@ -8,8 +8,8 @@ DeepInfer 的 agent 3 天、chat 7 天 TTL 是成本最优解，不是慷慨。�
 
 - **别家 TTL 短的原因**：KV 放在显存或单机本地存储，介质贵且依赖路由亲和；同时采用“付费写入加承诺时长”的产品契约。
 - **长 TTL 的边际收益很小**：chat 从 7 天缩到 3 天，命中率只掉 0.5–1 个点。
-- **7 天大致落在盈亏平衡点**：按 82.9% 毛利率反推成本后，chat 命中率在 80% 左右时，多留 4 天基本打平到略赚。
-- **分析性价比应看命中率–TTL 曲线**，TTL 本身是结果变量。
+- **7 天大致落在盈亏平衡点**：按 82.9% 毛利率反推成本后，chat 命中率在 80% 左右时，多留 4 天基本打平到略赚。按硬件成本独立重算，结论取决于 SSD 采购价：涨价前成立，2026 年盘价下只是边缘。
+- **分析性价比应看命中率–TTL 曲线**，TTL 本身是结果变量。SSD 加 HDD 冷热分层后，7 天留存在任何 GPU 成本假设下都成立。
 
 除标注来源的数字外，本报告的换算和估算均为推算，SSD 单价等为假设值。
 
@@ -136,9 +136,109 @@ TTL 是结果变量，建模时应以四个输入为核心：每 token KV 字节
 - **缓存对 DeepSeek 的价值在峰时容量。** 峰时 GPU 是瓶颈，省下的 prefill 算力可直接接新流量，一次命中的价值接近价格差 $0.294。建议用价格差作上限、算力成本作下限来框定区间。
 - **存储定价差距反映介质差距。** Gemini 3.8 Flash 显式存储约 $12/百万 token/天，豆包约 0.4 元/天，DeepSeek 估算成本约 $0.00024/天。
 
+## 硬件成本角度的独立分析
+
+不依赖公开价格和毛利率，只用硬件成本重算：按涨价前的盘价 7 天明显合理，按 2026 年盘价全 SSD 方案只在 GPU 成本偏高时勉强打平。
+
+判断指标是 T*：存一个 token 多少天，花的钱等于重算它一次。
+
+### 存储侧
+
+[30 TB TLC 企业盘](https://growthmarketreports.com/report/data-center-solid-state-drive-market-global-industry-analysis)从 2025 年三季度的 3,460 美元涨到 2026 年三季度的 22,600 美元。[30 TB HDD](https://www.storagereview.com/news/enterprise-ssd-prices-run-at-6-5x-last-year-vdura-pegs-a-30tb-tlc-drive-at-22600) 现价约 1,216 美元。假设：机箱等每 GB 摊 0.05 美元（HDD 为 0.01 美元），纠删码开销 1.2 倍，5 年折旧。
+
+| 介质与采购时点 | 每百万 token 每天（$） | 留 7 天（$） |
+| --- | --- | --- |
+| SSD，2025 年盘价 | 0.00010 | 0.0007 |
+| SSD，2026 年盘价 | 0.00047 | 0.0033 |
+| HDD，2026 年盘价 | 0.00003 | 0.0002 |
+
+### 计算侧
+
+吞吐取 [DeepInfer 开源仓库](https://github.com/deepseek-ai/DeepInfer)的离线基准（4 张 NVIDIA SM100，13 万上下文，每卡每秒 6 万–8.9 万未命中 token），乘负载均衡效率 0.8 和峰谷负载率 0.6–0.8，线上有效吞吐约每卡每小时 1.0–2.1 亿 token。GPU 每小时成本取两个端点，型号与基准不一致，仅作区间参考。
+
+| GPU 成本口径 | 重算每百万 token（$） |
+| --- | --- |
+| [$1.73/卡·小时](https://inferencex.semianalysis.com/chips/b200)（B200 超大规模厂商全成本） | 0.008–0.017 |
+| [$5.18/卡·小时](https://vkambati.substack.com/p/the-38-gpu-hour)（自建 B300 机柜测算） | 0.025–0.050 |
+
+### T* 与盈亏平衡
+
+每写入一个 token，在第 3–7 天实际被命中约 2.5%–10% 次（0.5%–1% 的命中率提升除以 10%–20% 的未命中占比）。多留 4 天需要的回报等于 4 除以 T*。
+
+| 组合 | T*（天） | 多留 4 天需要的回报 | 是否成立 |
+| --- | --- | --- | --- |
+| SSD 2025 盘价 + 高 GPU 成本 | 270–400 | 1.0%–1.5% | 成立 |
+| SSD 2025 盘价 + 低 GPU 成本 | 90–130 | 3%–4.4% | 基本成立 |
+| SSD 2026 盘价 + 高 GPU 成本 | 57–85 | 4.7%–7% | 边缘 |
+| SSD 2026 盘价 + 低 GPU 成本 | 19–28 | 14%–21% | 不成立 |
+| HDD 2026 盘价 | 约 280–1,650 | 0.2%–1.4% | 成立 |
+
+### 只有硬件角度能看到的三点
+
+- **TTL 约等于容量除以写入速率。** 每卡 14.4 TB、每卡每天新写入约 2–5 TB 逻辑数据，能撑 3–7 天。存量盘是沉没成本，留到写满即最优。
+- **写入寿命给 TTL 设下限。** 全量写入下每天整盘写入次数约为 1/TTL。[TLC 额定 1–3 次，QLC 为 0.1–0.3 次](https://electronics.alibaba.com/buyingguides/30tb-ssd-guide-when-to-buy,-what-to-skip)，对应 TTL 下限约 1 天和 3–10 天。官方未披露盘型。
+- **按能耗算留存几乎免费。** 重算一百万 token 约耗 0.009–0.013 度电，存一天约 0.00004 度（每 TB 1.6 瓦为假设），留 7 天只相当于重算一次能耗的 2%–3%。
+
+每卡配套约 17.3 TB 物理容量：按 2025 年盘价约 2,900 美元，占每卡 GPU 投资约 5%；按 2026 年盘价约 13,900 美元，约 25%。
+
+由 prefill 产能反向校验：prefill 约占一半 GPU，以离线上限满负荷一天最多处理约 30 万亿未命中 token，命中率不会低于约 81%。
+
+## SSD + HDD 冷热分层与留存时间更新
+
+分层后留存时间由两个 TTL 决定：热层约 1 天，冷层在经济上几乎不设限。DeepSeek 目前是全 SSD，3 天和 7 天是该约束下的结果，不是理论最优。
+
+### HDD 聚合块大小
+
+冷层应聚合到单盘单次读 1 MiB 以上，目标 4–16 MiB。按定位约 10 毫秒、[顺序吞吐 200–250 MB/s](https://datacenterdisk.com/reports/ssd-hdd-price-divergence-2026) 取 220 MB/s 计算：
+
+| 单盘单次读大小 | 耗时（ms） | 有效吞吐（MB/s） | 占顺序吞吐 |
+| --- | --- | --- | --- |
+| 112 KiB（现有块） | 10.5 | 11 | 5% |
+| 1 MiB | 14.8 | 71 | 32% |
+| 2 MiB | 19.5 | 107 | 49% |
+| 4 MiB | 29 | 144 | 65% |
+| 8 MiB | 48 | 174 | 79% |
+| 16 MiB | 86 | 195 | 89% |
+
+- **平衡点约 2 MiB。** 读得更小，时间主要花在寻道上；1 MiB 是值得做的门槛。
+- **尺寸按单盘读计算。** 10+2 纠删码会把 1 MiB 逻辑对象切成约 105 KiB 的分片，逻辑条带应设计为 10–64 MiB，或冷层改用副本、局部修复码。
+- **按会话前缀链聚合。** 冷命中需要整条前缀；1 万 token 的会话约 9 MB，3 万 token 约 26 MB，10 盘并行读取约 22 毫秒。
+- **队列门槛。** 冷层承接 1% 流量时，112 KiB 读需要约 1,500 块盘满负荷，占冷层盘数 50%–75%；聚合到 1 MiB 降到约 10%，4 MiB 约 5%。
+- **降级时重排。** 数据从 SSD 降级到 HDD 时按会话写成连续大段，按过期时间整段删除，不需要垃圾回收。
+
+### 两个 TTL
+
+- **热层（SSD）约 1 天。** 下限由 TLC 写入寿命决定；多在 SSD 放一天比 HDD 贵约 15 倍；1 天覆盖 agent 任务和当天内的 chat 回访。
+- **冷层（HDD）几周到几个月。** 盈亏平衡门槛是每写入 token 每天被命中 0.06%–0.4% 次，第 3–7 天的实际水平约为每天 0.6%–2.5%。上限来自模型更新使 KV 失效、数据留存合规和硬盘供应。
+
+| 问题 | 全 SSD | SSD + HDD 分层 |
+| --- | --- | --- |
+| 7 天是否合理 | 取决于盘是否在涨价前采购 | 在任何 GPU 成本假设下成立 |
+| chat 7 天、agent 3 天的差异 | 由尾部命中率差异解释 | 必要性下降，agent 也可留 7 天以上 |
+| 留存时间的决定因素 | 存储成本与命中率的平衡 | 热层看寿命和延迟，冷层看模型发布周期 |
+| 新建成本（每卡，2026 盘价） | 约 $13,900 | 留 7 天约 $3,900；留 30 天约 $7,800 |
+
+新建成本按每卡每天新写入约 3.5 TB 物理容量粗算。待定问题：冷命中后是否回迁 SSD、共享前缀是否单独留在热层、7 天以后的命中率。
+
+## 相关论文与官方说明
+
+没有论文专门论证 KVCache 是否需要跨天保存，带数字的官方说明只有 DeepSeek 一家；公开 trace 基本只覆盖一天以内。
+
+| 论文 | 来源 | 与本报告相关的结论 |
+| --- | --- | --- |
+| [KVCache in the Wild](https://arxiv.org/html/2506.02634v3) | 上交 + 阿里，通义线上 trace | to-C 流量 80% 的复用间隔在 10 分钟内，90% 的块在 612 秒后不再复用；无限缓存下命中率上限约 62% 和 54%；分析窗口为一天 |
+| [CacheWise](https://arxiv.org/pdf/2606.16824) | 华盛顿大学，Claude Code trace | 会话时长中位数约 36 分钟，长尾超过 2.6 小时；按预测的下次复用时间淘汰 |
+| [DualPath](https://arxiv.org/html/2602.21548v2) | 北大 + 清华 + DeepSeek | agent 命中率 95% 以上；每 PFLOP 对应的 KV 量 DeepSeek-V3 为 4.8–5.8 GB，Qwen2.5-32B 为 117–267 GB |
+| [CacheTTL](https://arxiv.org/html/2511.02230v4) | 伯克利 | 显存层的 TTL 取使复用概率乘收益减占用成本最大的值，与本报告的盈亏平衡式同构 |
+| [Tutti](https://arxiv.org/html/2605.03375) | 厦大等 | 云上 SSD 比 DRAM 便宜约 100 倍；约 2 TB DRAM 只能留约 5 分钟，100 TB 以上 NVMe 可留一小时以上 |
+| [LMCache](https://arxiv.org/pdf/2510.09665) | Tensormesh + 芝加哥大学 | 主张 KV 持久化到查询生命周期之外，未给出 TTL |
+| [KV Cache 管理综述](https://arxiv.org/html/2607.02574v1) | arXiv 2607.02574 | 没有系统形式化按会话的留存契约 |
+
+仅读过摘要或摘录的相关工作：[CachedAttention](https://arxiv.org/abs/2403.19708)、[Mooncake](https://www.usenix.org/conference/fast25/presentation/qin)、[CacheGen](https://arxiv.org/pdf/2310.07240)、[Compute or Load](https://arxiv.org/html/2410.03065)、[To Restore or To Recompute](https://doi.org/10.1145/3837053.3837336)、[NVIDIA 上下文内存存储平台技术博客](https://developer.nvidia.com/blog/introducing-nvidia-bluefield-4-powered-inference-context-memory-storage-platform-for-the-next-frontier-of-ai)。后者把推理上下文定性为可重算数据，同时主张 agent 的上下文要跨更长会话保留，未给出天数。
+
 ## 主要不确定性
 
-结论的方向可靠，具体数值依赖以下未经官方确认的输入。
+结论的方向可靠，具体数值依赖以下未经官方确认的输入。硬件成本分析另外依赖未公开的 GPU 型号、盘型和采购价，以及机箱成本、每 TB 功耗和利用率系数等假设；基准 GPU 与成本口径的 GPU 型号不一致。
 
 - **毛利率口径。** 82.9% 对应 1–7 月的旧模型和旧定价，来自媒体报道。DeepInfer 发布后的第三方估算从 77% 到 96% 不等。
 - **每卡收入。** $38 是按谷价和吞吐推出的理论收入，不是审计后的实收。
@@ -168,3 +268,14 @@ TTL 是结果变量，建模时应以四个输入为核心：每 token KV 字节
 - [实测 11 个端点的缓存 TTL（gist）](https://gist.github.com/monperrus/9784f52d5144975fd11be7f642c4a8fc)
 - [DeepSeek Revenue Surges 10x as API Gross Margin Hits 82.9%](https://deepthink.ltd/blog/deepseek-revenue-surge-82-9-api-gross-margin-ipo-2026/)
 - [第一财经：一张卡每小时收入 38 美元](https://www.yicai.com/news/103401110.html)
+
+硬件成本与分层分析的来源：
+
+- [DeepInfer 仓库首页（离线基准）](https://github.com/deepseek-ai/DeepInfer)
+- [StorageReview：企业 SSD 与 HDD 价格（VDURA 指数）](https://www.storagereview.com/news/enterprise-ssd-prices-run-at-6-5x-last-year-vdura-pegs-a-30tb-tlc-drive-at-22600)
+- [Growth Market Reports：数据中心 SSD 市场与价格](https://growthmarketreports.com/report/data-center-solid-state-drive-market-global-industry-analysis)
+- [30TB SSD 选购指南（TLC/QLC 寿命指标）](https://electronics.alibaba.com/buyingguides/30tb-ssd-guide-when-to-buy,-what-to-skip)
+- [DatacenterDisk：SSD/HDD 价格分化报告](https://datacenterdisk.com/reports/ssd-hdd-price-divergence-2026)
+- [SemiAnalysis InferenceX：B200](https://inferencex.semianalysis.com/chips/b200)
+
+价格类来源均取自搜索结果摘要，未打开全文核对。
