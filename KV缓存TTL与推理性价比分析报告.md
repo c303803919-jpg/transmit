@@ -4,12 +4,12 @@
 
 ## 核心结论
 
-DeepInfer 披露的 agent 3 天、chat 7 天 TTL，按本报告的估算在存储成本上可以成立，但结论取决于 SSD 采购价。下面把官方事实和估算分开，每个估算数字都列出算法和假设。
+DeepInfer 披露的 agent 3 天、chat 7 天 TTL，按本报告的估算在存储成本上可以成立，但结论取决于 SSD 采购价。下面把官方事实（均出自官方开源仓库的部署问答文档，不是论文）和估算分开，每个估算数字都列出算法和假设。
 
 ### 官方披露的事实
 
 - **TTL**：agent 3 天、chat 7 天；chat 缩到约 3 天会损失 0.5%–1% 的命中率。
-- **存储**：约 100 PiB SSD，每张在线 GPU 约 14.4 TB 逻辑容量，10+2 纠删码，KV 以 128 token 为单位存储。
+- **存储**：约 100 PiB SSD，每张在线 GPU 约 14.4 TB 逻辑容量，10+2 纠删码，KV 块大小为 128 token，命中和保存都按 128 的整数倍对齐。
 - **收入**：按谷价每卡每小时 38 美元。
 - **其他厂商**：只公布了 TTL 档位和计费方式，没有说明 TTL 长短的原因，本报告不对此做推断。
 
@@ -25,7 +25,7 @@ DeepInfer 披露的 agent 3 天、chat 7 天 TTL，按本报告的估算在存�
 
 | 数字 | 算法 | 输入的依据与假设 |
 | --- | --- | --- |
-| 每 token 的 KV 约 0.9 KB；每百万 token 约 0.9 GB | 112 KiB ÷ 128 token = 896 字节 | 128 token 单位是官方数据；112 KiB 是媒体报道的 3FS 优化块大小；“一个块正好存一个 128 token 单位”是假设，官方未给出每 token 字节数 |
+| 每 token 的 KV 约 0.9 KB；每百万 token 约 0.9 GB | 112 KiB ÷ 128 token = 896 字节 | 128 token 块大小出自官方开源仓库的部署问答文档；112 KiB 是媒体报道的 3FS 优化块大小，该文档未提及；“一个 3FS 块正好存一个 128 token 块”是假设，官方未给出每 token 字节数 |
 | SSD 留存 $0.00024/百万 token/天 | 每 504 卡缓存层年成本 70 万美元 → 每卡每年 $1,389；÷ 14,400 GB ÷ 365 天 = $0.00026/GB/天；× 0.9 GB | 70 万美元是一篇第三方分析的作者自己的假设，不是实测；14.4 TB 是官方数据 |
 | SSD 留存 $0.00010（2025 盘价）和 $0.00047（2026 盘价） | （盘价 $0.115 或 $0.753/GB + 机箱 $0.05/GB）× 1.2 ÷ 1,825 天 × 0.9 GB | 盘价是 30 TB TLC 企业盘的市场指数，不是 DeepSeek 的采购价；1.2 来自 10+2 纠删码；机箱成本和 5 年折旧是假设；未计电费、运维和资金成本 |
 | HDD 留存 $0.00003 | （盘价 $0.0405/GB + 机箱 $0.01/GB）× 1.2 ÷ 1,825 天 × 0.9 GB | 30 TB HDD 市场价；其余假设同上 |
@@ -76,9 +76,9 @@ OpenAI 旧架构的缓存状态在单机上，每个 key 超过约 15 次/分钟
 
 ## DeepInfer TTL 的成因
 
-DeepSeek 把“留存一天的成本”压到了极低，靠的是四项设计。事实来自 [DeepInfer 官方 Q&A](https://github.com/deepseek-ai/DeepInfer/blob/main/doc/inference_deployment_qa.md) 和 [InfoQ 报道](https://infoq.cn/article/NBXP966Bz3eqr6Qidvaf?amp=)。
+DeepSeek 把“留存一天的成本”压到了极低，靠的是四项设计。事实来自 [官方开源仓库的部署问答文档](https://github.com/deepseek-ai/DeepInfer/blob/main/doc/inference_deployment_qa.md) 和 [InfoQ 报道](https://infoq.cn/article/NBXP966Bz3eqr6Qidvaf?amp=)。
 
-1. **每 token 的 KV 极小。** KV 以 128 token 为一页，3FS 针对约 112 KiB 的块做了优化。若一块对应一页，折合每 token 约 0.9 KB（推算）。主 KV 采用 FP4 级别的低精度格式。
+1. **每 token 的 KV 极小。** KV 块大小为 128 token，命中和保存按 128 的整数倍对齐；据媒体报道，3FS 针对约 112 KiB 的块做了优化。若一个 3FS 块对应一个 128 token 块，折合每 token 约 0.9 KB（推算）。主 KV 采用 FP4 级别的低精度格式。
 2. **只留值得留的那一半。** SWA 层的 KV 只在活跃会话的几分钟内有用，落盘会占掉近一半持久容量。V4.1 改为不落盘，未命中时只重算最近 128 个 token。
 3. **集中式 SSD 存储池。** 约 100 PiB SSD、10+2 纠删码、每卡约 14.4 TB 逻辑容量。任何 prefill 机器都能命中任何前缀，不需要路由亲和，计算节点故障不丢缓存。
 4. **读取带宽跟得上。** 存储节点单机读吞吐至少 40 GB/s，集群峰值聚合读取约 10 TiB/s，读回比重算快。
@@ -266,7 +266,7 @@ TTL 是结果变量，建模时应以四个输入为核心：每 token KV 字节
 
 - **毛利率口径。** 82.9% 对应 1–7 月的旧模型和旧定价，来自媒体报道。DeepInfer 发布后的第三方估算从 77% 到 96% 不等。
 - **每卡收入。** $38 是按谷价和吞吐推出的理论收入，不是审计后的实收。
-- **每 token KV 字节数。** 0.9 KB 由 112 KiB 块大小换算，前提是一块对应一个 128 token 页，官方未给出压缩比。
+- **每 token KV 字节数。** 0.9 KB 由 112 KiB 块大小换算，前提是一个 3FS 块对应一个 128 token 块，官方未给出压缩比。
 - **prefill 吞吐。** 是 131K 上下文下的基准值，短上下文和线上实际利用率会不同。
 - **命中率。** 官方未公布，75%–90% 是由容量反推的区间，前提是存储接近写满。
 - **命中率–TTL 曲线。** 公开数据只有 chat 3 天对 7 天这一个点，5 分钟、1 小时、24 小时各档的增量需要自有流量数据或假设。
@@ -274,7 +274,7 @@ TTL 是结果变量，建模时应以四个输入为核心：每 token KV 字节
 
 ## 来源
 
-- [DeepInfer 官方部署 Q&A（GitHub）](https://github.com/deepseek-ai/DeepInfer/blob/main/doc/inference_deployment_qa.md)
+- [DeepInfer 官方开源仓库的部署问答文档（GitHub）](https://github.com/deepseek-ai/DeepInfer/blob/main/doc/inference_deployment_qa.md)
 - [InfoQ：DeepSeek 开源最新推理框架](https://infoq.cn/article/NBXP966Bz3eqr6Qidvaf?amp=)
 - [OpenAI Prompt Caching 文档](https://developers.openai.com/api/docs/guides/prompt-caching)
 - [Developers Digest：Prompt Caching Across AI Providers](https://www.developersdigest.tech/blog/prompt-caching-across-ai-providers-2026)
